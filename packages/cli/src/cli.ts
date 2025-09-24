@@ -11,7 +11,7 @@ const program = new Command();
 program
   .name('python-react-ml')
   .description('CLI tools for Python React ML framework')
-  .version('0.1.0');
+  .version('1.0.0');
 
 // Bundle command
 program

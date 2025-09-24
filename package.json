@@ -1,6 +1,6 @@
 {
   "name": "python-react-ml",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Run Python ML models directly in React and React Native apps - no backend required",
   "keywords": [
     "machine-learning",

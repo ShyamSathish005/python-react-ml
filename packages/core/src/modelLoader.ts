@@ -23,9 +23,9 @@ export async function extractBundle(bundleBytes: ArrayBuffer): Promise<ModelBund
   const manifest: PythonModelManifest = JSON.parse(manifestContent);
   
   // Read main Python file
-  const entryFile = zipContents.file(manifest.entry);
+  const entryFile = zipContents.file(manifest.entrypoint);
   if (!entryFile) {
-    throw new Error(`Entry file '${manifest.entry}' not found in bundle`);
+    throw new Error(`Entry file '${manifest.entrypoint}' not found in bundle`);
   }
   
   const code = await entryFile.async('string');
@@ -33,7 +33,7 @@ export async function extractBundle(bundleBytes: ArrayBuffer): Promise<ModelBund
   // Read additional files
   const files: Record<string, ArrayBuffer> = {};
   for (const [filename, file] of Object.entries(zipContents.files)) {
-    if (filename !== 'manifest.json' && filename !== manifest.entry && !(file as any).dir) {
+    if (filename !== 'manifest.json' && filename !== manifest.entrypoint && !(file as any).dir) {
       files[filename] = await (file as any).async('arraybuffer');
     }
   }

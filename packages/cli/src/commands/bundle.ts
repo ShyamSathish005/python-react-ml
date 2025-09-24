@@ -1,89 +1,74 @@
-import fs from 'fs';
-import path from 'path';
+import * as fs from 'fs';
+import * as path from 'path';
 import archiver from 'archiver';
 import chalk from 'chalk';
 import ora from 'ora';
+import { ManifestGenerator, BundleOptions } from '../utils/manifestGenerator';
 
-export interface BundleOptions {
-  output: string;
-  name?: string;
-  version: string;
-  include?: string[];
-  deps?: string[];
-}
+export async function bundleModel(entry: string, options: any): Promise<void> {
+  console.log(`🔨 Bundling model from ${entry}...`);
+  
+  // Validate entry file exists
+  if (!fs.existsSync(entry)) {
+    throw new Error(`Entry file not found: ${entry}`);
+  }
+  
+  const outputPath = options.output || 'model.bundle.zip';
+  const manifestGen = new ManifestGenerator();
+  
+  // Generate comprehensive manifest
+  const bundleOptions: BundleOptions = {
+    entry,
+    output: outputPath,
+    name: options.name || path.basename(entry, '.py'),
+    version: options.version || '1.0.0',
+    description: options.description,
+    author: options.author,
+    dependencies: options.deps || [],
+    pythonVersion: options.pythonVersion || '3.11',
+    memoryLimit: options.memoryLimit,
+    timeout: options.timeout
+  };
+  
+  const manifest = manifestGen.generateManifest(bundleOptions);
+  
+  // Validate manifest
+  const validation = manifestGen.validateManifest(manifest);
+  if (!validation.valid) {
+    console.error('❌ Manifest validation failed:');
+    validation.errors.forEach(error => console.error(`  - ${error}`));
+    throw new Error('Invalid manifest');
+  }
+  
+  console.log('✅ Manifest generated and validated');
+  
+  // Create ZIP bundle
+  const output = fs.createWriteStream(outputPath);
+  const archive = archiver('zip', { zlib: { level: 9 } });
 
-export async function bundleModel(entryPath: string, options: BundleOptions): Promise<void> {
-  const spinner = ora('Bundling Python model...').start();
-
-  try {
-    // Validate entry file exists
-    if (!fs.existsSync(entryPath)) {
-      throw new Error(`Entry file not found: ${entryPath}`);
-    }
-
-    // Read the Python code
-    const pythonCode = fs.readFileSync(entryPath, 'utf-8');
-
-    // Validate Python code has required functions
-    if (!pythonCode.includes('def predict(')) {
-      spinner.warn('Warning: No predict() function found in Python code');
-    }
-
-    // Create manifest
-    const manifest = {
-      name: options.name || path.basename(entryPath, '.py'),
-      version: options.version,
-      entry: path.basename(entryPath),
-      python_version: '3.11',
-      dependencies: options.deps || [],
-      runtime_hints: {
-        pyodide: true,
-        native: false
-      },
-      created_at: new Date().toISOString()
-    };
-
-    spinner.text = 'Creating bundle archive...';
-
-    // Create ZIP archive
-    const output = fs.createWriteStream(options.output);
-    const archive = archiver('zip', { zlib: { level: 9 } });
-
+  return new Promise((resolve, reject) => {
     output.on('close', () => {
-      spinner.succeed(`Bundle created: ${options.output} (${archive.pointer()} bytes)`);
+      console.log(`✅ Bundle created: ${outputPath} (${archive.pointer()} bytes)`);
+      console.log(`📋 Manifest: ${manifest.name} v${manifest.version}`);
+      console.log(`🔒 SHA256: ${manifest.sha256}`);
+      resolve();
     });
 
-    archive.on('error', (err) => {
-      throw err;
-    });
-
+    archive.on('error', reject);
     archive.pipe(output);
-
-    // Add manifest
-    archive.append(JSON.stringify(manifest, null, 2), { name: 'manifest.json' });
-
-    // Add main Python file
-    archive.append(pythonCode, { name: path.basename(entryPath) });
-
-    // Add additional files if specified
-    if (options.include) {
-      for (const filePath of options.include) {
-        if (fs.existsSync(filePath)) {
-          const stats = fs.statSync(filePath);
-          if (stats.isFile()) {
-            archive.file(filePath, { name: path.basename(filePath) });
-          } else if (stats.isDirectory()) {
-            archive.directory(filePath, path.basename(filePath));
-          }
-        } else {
-          spinner.warn(`File not found, skipping: ${filePath}`);
-        }
+    
+    // Add all files from manifest
+    const entryDir = path.dirname(entry);
+    for (const [filePath, fileInfo] of Object.entries(manifest.files)) {
+      const fullPath = path.join(entryDir, filePath);
+      if (fs.existsSync(fullPath)) {
+        archive.file(fullPath, { name: filePath });
       }
     }
-
-    await archive.finalize();
-  } catch (error) {
-    spinner.fail('Bundle creation failed');
-    throw error;
-  }
+    
+    // Add manifest.json
+    archive.append(JSON.stringify(manifest, null, 2), { name: 'manifest.json' });
+    
+    archive.finalize();
+  });
 }

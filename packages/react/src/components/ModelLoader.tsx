@@ -18,7 +18,7 @@ export function ModelLoader({
 
   useEffect(() => {
     if (modelResult.status === 'error' && modelResult.error && onError) {
-      onError(new Error(modelResult.error));
+      onError(new Error(modelResult.error.message));
     }
   }, [modelResult.status, modelResult.error, onError]);
 
@@ -31,7 +31,7 @@ export function ModelLoader({
     case 'loading':
       return <div>Loading Python model...</div>;
     case 'error':
-      return <div>Error loading model: {modelResult.error}</div>;
+      return <div>Error loading model: {modelResult.error?.message}</div>;
     case 'ready':
       return <div>Model loaded successfully</div>;
     default:

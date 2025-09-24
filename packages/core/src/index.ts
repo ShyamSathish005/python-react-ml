@@ -4,7 +4,7 @@ export * from './modelLoader';
 
 import { PythonEngine } from './pythonEngine';
 import { fetchBundle, extractBundle, loadPythonFile } from './modelLoader';
-import type { ModelLoadOptions, PythonModel, PythonEngineOptions } from './types';
+import type { ModelLoadOptions, PythonModel, PythonEngineOptions, PythonModelManifest } from './types';
 
 export class PythonReactML {
   private engine: PythonEngine;
@@ -26,7 +26,26 @@ export class PythonReactML {
       manifest: manifest || {
         name: 'custom-model',
         version: '1.0.0',
-        entry: filePath,
+        entrypoint: filePath,
+        python_version: '3.11',
+        dependencies: [],
+        bundle_version: '1.0',
+        files: {},
+        sha256: 'generated',
+        runtime_hints: {
+          pyodide: true,
+          native: false,
+          memory_limit: 512,
+          timeout: 30
+        },
+        functions: {
+          predict: {
+            description: 'Main prediction function',
+            inputs: { data: 'any' },
+            outputs: { result: 'any' }
+          }
+        },
+        created_at: new Date().toISOString()
       },
       code,
       files: {}

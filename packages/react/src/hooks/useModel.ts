@@ -1,61 +1,286 @@
-import { useState, useEffect, useCallback } from 'react';
-import { PythonReactML, type PythonModel, type UseModelResult, type ModelStatus } from '@python-react-ml/core';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { 
+  PythonReactML, 
+  type PythonModel, 
+  type UseModelResult, 
+  type ModelStatus,
+  type ModelError,
+  type ModelProgress,
+  type RuntimeStatus,
+  type RuntimeError,
+  type PythonEngineOptions
+} from '@python-react-ml/core';
 
-export function useModel(modelUrl: string): UseModelResult {
+export interface UseModelOptions {
+  /** Auto-load model when URL changes */
+  autoLoad?: boolean;
+  /** Retry loading on failure */
+  retryOnError?: boolean;
+  /** Maximum retry attempts */
+  maxRetries?: number;
+  /** Custom error handler */
+  onError?: (error: ModelError | RuntimeError) => void;
+  /** Progress callback */
+  onProgress?: (progress: ModelProgress) => void;
+  /** Python engine platform */
+  platform?: 'web' | 'native';
+  /** Pyodide URL for web platform */
+  pyodideUrl?: string;
+  /** Enable logging */
+  enableLogging?: boolean;
+  /** Memory limit */
+  memoryLimit?: number;
+  /** Operation timeout */
+  timeout?: number;
+}
+
+export function useModel(
+  modelUrl: string, 
+  options: UseModelOptions = {}
+): UseModelResult {
+  const {
+    autoLoad = true,
+    retryOnError = false,
+    maxRetries = 3,
+    onError,
+    onProgress,
+    ...engineOptions
+  } = options;
+
+  // State
   const [model, setModel] = useState<PythonModel | null>(null);
   const [status, setStatus] = useState<ModelStatus>('idle');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ModelError | null>(null);
+  const [progress, setProgress] = useState<ModelProgress>({ status: 'idle' });
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPredicting, setIsPredicting] = useState(false);
 
-  const engine = new PythonReactML({ platform: 'web' });
+  // Refs for stability
+  const engineRef = useRef<PythonReactML | null>(null);
+  const retryCountRef = useRef(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const loadModel = useCallback(async () => {
-    if (!modelUrl) return;
+  // Create engine instance with status callbacks
+  const engine = useMemo(() => {
+    const engineConfig: PythonEngineOptions = {
+      platform: options.platform || 'web',
+      pyodideUrl: options.pyodideUrl,
+      enableLogging: options.enableLogging,
+      memoryLimit: options.memoryLimit,
+      timeout: options.timeout,
+      onStatusChange: (runtimeStatus: RuntimeStatus) => {
+        // Map runtime status to model status
+        const modelStatusMap: Record<RuntimeStatus, ModelStatus> = {
+          'idle': 'idle',
+          'initializing': 'downloading',
+          'ready': 'ready',
+          'loading': 'loading',
+          'executing': 'ready',
+          'error': 'error',
+          'terminated': 'idle'
+        };
+        const mappedStatus = modelStatusMap[runtimeStatus];
+        setStatus(mappedStatus);
+        setProgress(prev => ({ ...prev, status: mappedStatus }));
+      },
+      onProgress: (progressValue: number) => {
+        const progressData: ModelProgress = {
+          status,
+          progress: progressValue,
+          message: `Progress: ${Math.round(progressValue)}%`
+        };
+        setProgress(progressData);
+        options.onProgress?.(progressData);
+      },
+      onError: (runtimeError: RuntimeError) => {
+        const modelError: ModelError = {
+          type: runtimeError.type as ModelError['type'],
+          message: runtimeError.message,
+          details: runtimeError.details,
+          timestamp: runtimeError.timestamp,
+          stack: runtimeError.stack,
+          pythonTraceback: runtimeError.pythonTraceback
+        };
+        setError(modelError);
+        setStatus('error');
+        setProgress(prev => ({ ...prev, status: 'error', error: modelError }));
+        onError?.(modelError);
+      }
+    };
 
-    setStatus('loading');
+    const newEngine = new PythonReactML(engineConfig);
+    engineRef.current = newEngine;
+    return newEngine;
+  }, [status, options.platform, options.pyodideUrl, options.enableLogging, options.memoryLimit, options.timeout, options.onError, options.onProgress]);
+
+  // Enhanced load function with retry logic
+  const loadModel = useCallback(async (url?: string): Promise<void> => {
+    const targetUrl = url || modelUrl;
+    if (!targetUrl) return;
+
+    // Cancel any ongoing operation
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
+    setIsLoading(true);
+    setStatus('downloading');
     setError(null);
+    setProgress({ status: 'downloading', progress: 0, message: 'Starting download...' });
+
+    const attemptLoad = async (attempt: number): Promise<void> => {
+      try {
+        if (abortControllerRef.current?.signal.aborted) {
+          throw new Error('Load operation was cancelled');
+        }
+
+        setProgress({ 
+          status: 'loading', 
+          progress: 10, 
+          message: `Loading model... (Attempt ${attempt}/${maxRetries + 1})` 
+        });
+
+        const loadedModel = await engine.loadModelFromBundle(targetUrl);
+
+        if (abortControllerRef.current?.signal.aborted) {
+          loadedModel.cleanup?.();
+          throw new Error('Load operation was cancelled');
+        }
+
+        setModel(loadedModel);
+        setStatus('ready');
+        setProgress({ status: 'ready', progress: 100, message: 'Model ready' });
+        retryCountRef.current = 0;
+
+      } catch (err) {
+        if (abortControllerRef.current?.signal.aborted) {
+          return; // Don't handle aborted operations as errors
+        }
+
+        const modelError: ModelError = {
+          type: 'network',
+          message: err instanceof Error ? err.message : 'Failed to load model',
+          timestamp: new Date().toISOString(),
+          details: { attempt, url: targetUrl, error: err }
+        };
+
+        if (retryOnError && attempt <= maxRetries) {
+          console.warn(`Model load attempt ${attempt} failed, retrying...`, err);
+          setTimeout(() => attemptLoad(attempt + 1), Math.pow(2, attempt) * 1000);
+        } else {
+          setError(modelError);
+          setStatus('error');
+          setProgress({ status: 'error', error: modelError });
+          console.error('Model loading failed after all retries:', err);
+        }
+      }
+    };
 
     try {
-      const loadedModel = await engine.loadModelFromBundle(modelUrl);
-      setModel(loadedModel);
-      setStatus('ready');
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to load model';
-      setError(errorMessage);
-      setStatus('error');
-      console.error('Model loading failed:', err);
+      await attemptLoad(1);
+    } finally {
+      setIsLoading(false);
+      abortControllerRef.current = null;
     }
-  }, [modelUrl]);
+  }, [modelUrl, engine, retryOnError, maxRetries]);
 
+  // Enhanced predict function with loading state
   const predict = useCallback(async (input: any) => {
     if (!model) {
-      throw new Error('Model not loaded');
+      const error = new Error('Model not loaded');
+      setError({
+        type: 'runtime',
+        message: error.message,
+        timestamp: new Date().toISOString()
+      });
+      throw error;
     }
-    return await model.predict(input);
+
+    setIsPredicting(true);
+    setStatus('ready'); // Keep as ready during prediction
+    
+    try {
+      const result = await model.predict(input);
+      return result;
+    } catch (err) {
+      const modelError: ModelError = {
+        type: 'python',
+        message: err instanceof Error ? err.message : 'Prediction failed',
+        timestamp: new Date().toISOString(),
+        details: { input }
+      };
+      setError(modelError);
+      throw modelError;
+    } finally {
+      setIsPredicting(false);
+    }
   }, [model]);
 
-  const reload = useCallback(async () => {
-    setModel(null);
-    await loadModel();
-  }, [loadModel]);
+  // Enhanced unload function
+  const unload = useCallback(async () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
 
+    if (model) {
+      try {
+        await model.cleanup?.();
+      } catch (err) {
+        console.warn('Error during model cleanup:', err);
+      }
+    }
+
+    setModel(null);
+    setStatus('idle');
+    setError(null);
+    setProgress({ status: 'idle' });
+    setIsLoading(false);
+    setIsPredicting(false);
+  }, [model]);
+
+  // Enhanced reload function
+  const reload = useCallback(async () => {
+    await unload();
+    await loadModel();
+  }, [unload, loadModel]);
+
+  // Auto-load effect
   useEffect(() => {
-    if (modelUrl) {
+    if (modelUrl && autoLoad) {
       loadModel();
     }
 
     return () => {
-      if (model) {
-        model.cleanup?.();
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
-      engine.cleanup();
     };
-  }, [modelUrl, loadModel]);
+  }, [modelUrl, autoLoad, loadModel]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      unload();
+      engineRef.current?.cleanup();
+    };
+  }, [unload]);
 
   return {
     model,
     status,
     error,
     predict,
-    reload
+    unload,
+    reload,
+    progress,
+    // Enhanced state information
+    isLoading,
+    isPredicting,
+    isReady: status === 'ready' && !isLoading && !isPredicting,
+    hasError: status === 'error' || error !== null,
+    // Enhanced actions
+    load: loadModel,
+    clearError: useCallback(() => setError(null), [])
   };
 }
