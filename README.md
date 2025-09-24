@@ -52,7 +52,7 @@ cd ios && pod install
 npm install -g @python-react-ml/cli
 ```
 
-🎥 [Watch Installation Tutorial](./assets/install.mp4)
+https://github.com/user-attachments/assets/b36381eb-06e1-426c-9923-5448ef104545
 
 ## 🚀 Quick Start
 
