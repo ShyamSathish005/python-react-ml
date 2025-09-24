@@ -52,6 +52,8 @@ cd ios && pod install
 npm install -g @python-react-ml/cli
 ```
 
+🎥 [Watch Installation Tutorial](./assets/install.mp4)
+
 ## 🚀 Quick Start
 
 ### 1. Create a Python Model
