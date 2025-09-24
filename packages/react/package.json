@@ -1,0 +1,34 @@
+{
+  "name": "@python-react-ml/react",
+  "version": "0.1.0", 
+  "description": "React hooks and components for Python ML models",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --external react,react-dom",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --external react,react-dom --watch",
+    "clean": "rm -rf dist",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@python-react-ml/core": "^0.1.0"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
+  },
+  "devDependencies": {
+    "tsup": "^7.0.0",
+    "@types/react": "^18.0.0"
+  },
+  "keywords": [
+    "react",
+    "hooks",
+    "python",
+    "machine-learning"
+  ]
+}

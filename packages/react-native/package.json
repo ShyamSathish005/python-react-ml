@@ -1,0 +1,36 @@
+{
+  "name": "@python-react-ml/react-native",
+  "version": "0.1.0",
+  "description": "React Native bridge for Python ML models",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "android",
+    "ios",
+    "python-react-ml.podspec"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs --dts --external react-native",
+    "dev": "tsup src/index.ts --format cjs --dts --external react-native --watch", 
+    "clean": "rm -rf dist",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@python-react-ml/core": "^0.1.0"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-native": ">=0.65.0"
+  },
+  "devDependencies": {
+    "tsup": "^7.0.0",
+    "@types/react-native": "^0.72.0"
+  },
+  "keywords": [
+    "react-native",
+    "python",
+    "machine-learning",
+    "native-modules"
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "name": "@python-react-ml/cli",
+  "version": "0.1.0",
+  "description": "CLI tools for bundling and managing Python ML models",
+  "main": "dist/index.js",
+  "bin": {
+    "python-react-ml": "dist/cli.js",
+    "prml": "dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/cli.ts --format cjs --dts",
+    "dev": "tsup src/cli.ts --format cjs --dts --watch",
+    "clean": "rm -rf dist",
+    "test": "jest"
+  },
+  "dependencies": {
+    "commander": "^11.0.0",
+    "chalk": "^4.1.0",
+    "archiver": "^6.0.0",
+    "ora": "^5.4.0"
+  },
+  "devDependencies": {
+    "tsup": "^7.0.0",
+    "@types/archiver": "^6.0.0"
+  },
+  "keywords": [
+    "cli",
+    "python", 
+    "bundling",
+    "machine-learning"
+  ]
+}

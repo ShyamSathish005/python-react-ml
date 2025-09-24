@@ -1,0 +1,53 @@
+{
+  "name": "python-react-ml",
+  "version": "0.1.0",
+  "description": "Run Python ML models directly in React and React Native apps - no backend required",
+  "keywords": [
+    "machine-learning",
+    "react",
+    "react-native", 
+    "python",
+    "pyodide",
+    "offline-ml",
+    "client-side-ml",
+    "ml-inference"
+  ],
+  "homepage": "https://github.com/yourusername/python-react-ml#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/python-react-ml.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/python-react-ml/issues"
+  },
+  "license": "MIT",
+  "author": "Your Name <your.email@example.com>",
+  "workspaces": [
+    "packages/*",
+    "examples/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces",
+    "lint": "eslint packages/*/src --ext .ts,.tsx",
+    "type-check": "tsc --noEmit",
+    "clean": "npm run clean --workspaces",
+    "dev:react-example": "npm run dev --workspace=examples/react-web",
+    "dev:rn-example": "npm run start --workspace=examples/react-native-app",
+    "publish:all": "npm run build && npm publish --workspaces --access public"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "lerna": "^7.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0",
+    "tsup": "^7.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=7.0.0"
+  }
+}
