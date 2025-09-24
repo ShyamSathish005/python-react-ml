@@ -26,7 +26,7 @@ module.exports = __toCommonJS(src_exports);
 
 // src/PythonReactMLNative.ts
 var import_react_native = require("react-native");
-var LINKING_ERROR = `The package '@shyamsathish005/python-react-ml-react-native' doesn't seem to be linked. Make sure: 
+var LINKING_ERROR = `The package 'python-react-ml-react-native' doesn't seem to be linked. Make sure: 
 
 ` + import_react_native.Platform.select({ ios: "- You have run 'cd ios && pod install'\n", default: "" }) + "- You rebuilt the app after installing the package\n- You are not using Expo managed workflow\n";
 var PythonReactML = import_react_native.NativeModules.PythonReactML ? import_react_native.NativeModules.PythonReactML : new Proxy(

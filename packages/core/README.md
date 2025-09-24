@@ -10,12 +10,12 @@ npm install python-react-ml
 
 For React apps, also install:
 ```bash
-npm install @shyamsathish005/python-react-ml-react
+npm install python-react-ml-react
 ```
 
 For React Native apps, also install:
 ```bash
-npm install @shyamsathish005/python-react-ml-react-native
+npm install python-react-ml-react-native
 ```
 
 ## Quick Start
@@ -23,7 +23,7 @@ npm install @shyamsathish005/python-react-ml-react-native
 ### React
 
 ```jsx
-import { useModel } from '@shyamsathish005/python-react-ml-react';
+import { useModel } from 'python-react-ml-react';
 
 function MyMLComponent() {
   const { model, isLoading, error, runInference } = useModel('/path/to/model.bundle');
@@ -53,7 +53,7 @@ function MyMLComponent() {
 ### React Native
 
 ```jsx
-import { useModelNative } from '@shyamsathish005/python-react-ml-react-native';
+import { useModelNative } from 'python-react-ml-react-native';
 
 function MyMLComponent() {
   const { model, isLoading, error, runInference } = useModelNative('my-model');

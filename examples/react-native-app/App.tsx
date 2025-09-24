@@ -9,7 +9,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { useModelNative } from '@shyamsathish005/python-react-ml-react-native';
+import { useModelNative } from 'python-react-ml-react-native';
 
 function ModelDemo() {
   const { 
