@@ -7,13 +7,13 @@
 
 ## 🚀 Features
 
-- **🐍 Python in the Browser**: Run real Python code client-side using Pyodide
-- **⚛️ React Integration**: Seamless hooks and components for React apps
-- **📱 React Native Support**: Native bridge for mobile applications
-- **🔄 Offline-First**: No internet required after initial model load
-- **📦 Easy Bundling**: CLI tools for model packaging and deployment
-- **🛠️ TypeScript**: Full TypeScript support for better DX
-- **⚡ Web Workers**: Non-blocking Python execution
+- ** Python in the Browser**: Run real Python code client-side using Pyodide
+- ** React Integration**: Seamless hooks and components for React apps
+- ** React Native Support**: Native bridge for mobile applications
+- ** Offline-First**: No internet required after initial model load
+- ** Easy Bundling**: CLI tools for model packaging and deployment
+- ** TypeScript**: Full TypeScript support for better DX
+- ** Web Workers**: Non-blocking Python execution
 
 ## 📋 Table of Contents
 
@@ -393,9 +393,9 @@ npm run publish:all
 
 ## 📄 License
 
-MIT © [Your Name](https://github.com/yourusername)
+MIT © Shyam Sathish (https://github.com/ShyamSathish005)
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [Pyodide](https://pyodide.org/) - Python in the browser
 - [React](https://reactjs.org/) - UI library
@@ -403,4 +403,4 @@ MIT © [Your Name](https://github.com/yourusername)
 
 ---
 
-**Made with ❤️ for developers who want to bring Python ML to the frontend**
+**Made with ❤️ for developers who want to bring Python ML to the Frontend**
