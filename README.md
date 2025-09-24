@@ -376,12 +376,13 @@ npm run build
 npm run publish:all
 ```
 
-## ⚠️ Limitations
+## Things to Consider
 
 - **Web**: Limited to Pyodide-compatible packages (most popular ML libraries supported)
 - **File Size**: Bundles can be large due to Python runtime
 - **Performance**: Slightly slower than native Python (but often faster than server round-trips)
 - **React Native**: Requires native bridge implementation (iOS/Android)
+We will see how can we optimize it in the long run 
 
 ## 🗺️ Roadmap
 
