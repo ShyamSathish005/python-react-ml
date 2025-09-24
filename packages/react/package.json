@@ -1,5 +1,5 @@
 {
-  "name": "@shyamsathish005/python-react-ml-react",
+  "name": "python-react-ml-react",
   "version": "1.0.0", 
   "description": "React hooks and components for Python ML models",
   "main": "dist/index.js",
