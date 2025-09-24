@@ -7,13 +7,13 @@
 
 ## 🚀 Features
 
-- ** Python in the Browser**: Run real Python code client-side using Pyodide
-- ** React Integration**: Seamless hooks and components for React apps
-- ** React Native Support**: Native bridge for mobile applications
-- ** Offline-First**: No internet required after initial model load
-- ** Easy Bundling**: CLI tools for model packaging and deployment
-- ** TypeScript**: Full TypeScript support for better DX
-- ** Web Workers**: Non-blocking Python execution
+- **Python in the Browser**: Run real Python code client-side using Pyodide
+- **React Integration**: Seamless hooks and components for React apps
+- **React Native Support**: Native bridge for mobile applications
+- **Offline-First**: No internet required after initial model load
+- **Easy Bundling**: CLI tools for model packaging and deployment
+- **TypeScript**: Full TypeScript support for better DX
+- **Web Workers**: Non-blocking Python execution
 
 ## 📋 Table of Contents
 
