@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import type { PythonModel, ModelStatus, UseModelResult } from '@python-react-ml/core';
+import type { PythonModel, ModelStatus, UseModelResult } from 'python-react-ml';
 
 export interface ModelContextValue {
   engine: any;

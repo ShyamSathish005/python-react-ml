@@ -1,7 +1,7 @@
 {
-  "name": "@python-react-ml/core",
-  "version": "1.0.0",
-  "description": "Core Python execution engine for React and React Native",
+  "name": "python-react-ml",
+  "version": "1.0.1",
+  "description": "Run Python ML models directly in React and React Native apps - no backend required",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -32,5 +32,15 @@
     "pyodide", 
     "machine-learning",
     "webassembly"
-  ]
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ShyamSathish005/python-react-ml.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/ShyamSathish005/python-react-ml#readme",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
 }

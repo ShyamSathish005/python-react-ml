@@ -4,7 +4,7 @@ import * as crypto from 'crypto';
 import JSZip from 'jszip';
 import ora from 'ora';
 import { ManifestGenerator } from '../utils/manifestGenerator';
-import { PythonModelManifest } from '@python-react-ml/core';
+import { PythonModelManifest } from 'python-react-ml';
 
 export async function validateModel(entry: string): Promise<void> {
   console.log(`🔍 Validating model ${entry}...`);

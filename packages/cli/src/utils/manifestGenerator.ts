@@ -1,7 +1,7 @@
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
-import { PythonModelManifest } from '@python-react-ml/core';
+import { PythonModelManifest } from 'python-react-ml';
 
 export interface BundleOptions {
   entry: string;

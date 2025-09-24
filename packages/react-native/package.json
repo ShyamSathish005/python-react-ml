@@ -1,5 +1,5 @@
 {
-  "name": "@python-react-ml/react-native",
+  "name": "@shyamsathish005/python-react-ml-react-native",
   "version": "1.0.0",
   "description": "React Native bridge for Python ML models",
   "main": "dist/index.js",
@@ -17,7 +17,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@python-react-ml/core": "file:../core"
+    "python-react-ml": "file:../core"
   },
   "peerDependencies": {
     "react": ">=16.8.0",
@@ -32,5 +32,15 @@
     "python",
     "machine-learning",
     "native-modules"
-  ]
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shyamsathish/python-react-ml.git",
+    "directory": "packages/react-native"
+  },
+  "homepage": "https://github.com/shyamsathish/python-react-ml#readme",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
 }

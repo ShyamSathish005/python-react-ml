@@ -1,5 +1,5 @@
 {
-  "name": "@python-react-ml/react",
+  "name": "@shyamsathish005/python-react-ml-react",
   "version": "1.0.0", 
   "description": "React hooks and components for Python ML models",
   "main": "dist/index.js",
@@ -15,7 +15,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@python-react-ml/core": "file:../core"
+    "python-react-ml": "file:../core"
   },
   "peerDependencies": {
     "react": ">=16.8.0",
@@ -30,5 +30,15 @@
     "hooks",
     "python",
     "machine-learning"
-  ]
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shyamsathish/python-react-ml.git",
+    "directory": "packages/react"
+  },
+  "homepage": "https://github.com/shyamsathish/python-react-ml#readme",
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  }
 }

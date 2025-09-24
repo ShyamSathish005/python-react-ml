@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { PythonReactML } from '@python-react-ml/core';
+import { PythonReactML } from 'python-react-ml';
 
 export interface UsePythonEngineOptions {
   pyodideUrl?: string;

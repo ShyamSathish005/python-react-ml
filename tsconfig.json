@@ -20,10 +20,10 @@
     "outDir": "./dist",
     "baseUrl": ".",
     "paths": {
-      "@python-react-ml/core": ["./packages/core/src"],
-      "@python-react-ml/react": ["./packages/react/src"],
-      "@python-react-ml/react-native": ["./packages/react-native/src"],
-      "@python-react-ml/cli": ["./packages/cli/src"]
+      "python-react-ml": ["./packages/core/src"],
+      "@shyamsathish005/python-react-ml-react": ["./packages/react/src"],
+      "@shyamsathish005/python-react-ml-react-native": ["./packages/react-native/src"],
+      "@shyamsathish005/python-react-ml-cli": ["./packages/cli/src"]
     }
   },
   "include": [

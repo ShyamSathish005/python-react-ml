@@ -20,4 +20,4 @@ export type {
   RuntimeStatus,
   RuntimeError,
   PythonModelManifest
-} from '@python-react-ml/core';
+} from 'python-react-ml';

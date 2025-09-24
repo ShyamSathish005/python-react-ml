@@ -1,7 +1,7 @@
 import { useModel } from '../hooks/useModel';
 
 // Mock the core module
-jest.mock('@python-react-ml/core', () => ({
+jest.mock('python-react-ml', () => ({
   PythonReactML: jest.fn().mockImplementation(() => ({
     initialize: jest.fn().mockResolvedValue(undefined),
     loadModel: jest.fn().mockResolvedValue({ predict: jest.fn() }),

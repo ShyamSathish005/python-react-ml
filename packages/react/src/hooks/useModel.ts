@@ -9,7 +9,7 @@ import {
   type RuntimeStatus,
   type RuntimeError,
   type PythonEngineOptions
-} from '@python-react-ml/core';
+} from 'python-react-ml';
 
 export interface UseModelOptions {
   /** Auto-load model when URL changes */

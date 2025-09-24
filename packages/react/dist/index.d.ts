@@ -1,5 +1,5 @@
-import { ModelError, RuntimeError, ModelProgress, UseModelResult, PythonReactML, PythonModel } from '@python-react-ml/core';
-export { ModelBundle, ModelError, ModelProgress, ModelStatus, PythonModel, PythonModelManifest, RuntimeError, RuntimeStatus } from '@python-react-ml/core';
+import { ModelError, RuntimeError, ModelProgress, UseModelResult, PythonReactML, PythonModel } from 'python-react-ml';
+export { ModelBundle, ModelError, ModelProgress, ModelStatus, PythonModel, PythonModelManifest, RuntimeError, RuntimeStatus } from 'python-react-ml';
 import * as react_jsx_runtime from 'react/jsx-runtime';
 import React, { ReactNode, Component, ErrorInfo } from 'react';
 

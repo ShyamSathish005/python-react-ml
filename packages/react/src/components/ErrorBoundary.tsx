@@ -1,5 +1,5 @@
 import React, { Component, ReactNode, ErrorInfo } from 'react';
-import { ModelError } from '@python-react-ml/core';
+import { ModelError } from 'python-react-ml';
 
 interface ErrorBoundaryState {
   hasError: boolean;

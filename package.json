@@ -12,16 +12,16 @@
     "client-side-ml",
     "ml-inference"
   ],
-  "homepage": "https://github.com/yourusername/python-react-ml#readme",
+  "homepage": "https://github.com/ShyamSathish005/python-react-ml#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/python-react-ml.git"
+    "url": "https://github.com/ShyamSathish005/python-react-ml.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/python-react-ml/issues"
+    "url": "https://github.com/ShyamSathish005/python-react-ml/issues"
   },
   "license": "MIT",
-  "author": "Your Name <your.email@example.com>",
+  "author": "ShyamSathish005",
   "workspaces": [
     "packages/*",
     "examples/*"

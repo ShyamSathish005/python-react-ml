@@ -11,13 +11,13 @@
     "bundle-model": "python-react-ml bundle model.py -o assets/model.bundle.zip"
   },
   "dependencies": {
-    "@python-react-ml/core": "file:../../packages/core",
-    "@python-react-ml/react-native": "file:../../packages/react-native",
+    "python-react-ml": "file:../../packages/core",
+    "@shyamsathish005/python-react-ml-react-native": "file:../../packages/react-native",
     "react": "^18.2.0",
     "react-native": "^0.72.0"
   },
   "devDependencies": {
-    "@python-react-ml/cli": "file:../../packages/cli",
+    "@shyamsathish005/python-react-ml-cli": "file:../../packages/cli",
     "@types/react": "^18.2.0",
     "@types/react-native": "^0.72.0",
     "typescript": "^5.0.0"
