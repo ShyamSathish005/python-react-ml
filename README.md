@@ -394,6 +394,8 @@ npm run publish:all
 ## 📄 License
 
 MIT © Shyam Sathish (https://github.com/ShyamSathish005)
+MIT © Siddharth B (https://github.com/Siddharth-B)
+MIT © Sathyanrayanaa. T (https://github.com/Sathyanrayanaa-T)
 
 ## Acknowledgments
 
