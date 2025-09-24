@@ -1,5 +1,5 @@
 {
-  "name": "@shyamsathish005/python-react-ml-react-native",
+  "name": "python-react-ml-react-native",
   "version": "1.0.0",
   "description": "React Native bridge for Python ML models",
   "main": "dist/index.js",

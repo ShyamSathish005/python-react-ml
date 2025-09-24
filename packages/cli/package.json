@@ -1,5 +1,5 @@
 {
-  "name": "@shyamsathish005/python-react-ml-cli",
+  "name": "python-react-ml-cli",
   "version": "1.0.0",
   "description": "CLI tools for bundling and managing Python ML models",
   "main": "dist/index.js",
