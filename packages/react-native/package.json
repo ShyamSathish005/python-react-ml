@@ -17,7 +17,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@python-react-ml/core": "^0.1.0"
+    "@python-react-ml/core": "file:../core"
   },
   "peerDependencies": {
     "react": ">=16.8.0",

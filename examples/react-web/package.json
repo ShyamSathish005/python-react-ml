@@ -1,0 +1,26 @@
+{
+  "name": "react-web-example",
+  "version": "1.0.0",
+  "description": "React web example for Python React ML",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "bundle-model": "python-react-ml bundle model.py -o public/model.bundle.zip"
+  },
+  "dependencies": {
+    "@python-react-ml/core": "file:../../packages/core",
+    "@python-react-ml/react": "file:../../packages/react",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@python-react-ml/cli": "file:../../packages/cli",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^4.4.0"
+  }
+}

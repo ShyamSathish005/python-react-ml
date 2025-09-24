@@ -3,7 +3,7 @@
   "version": "0.1.0", 
   "description": "React hooks and components for Python ML models",
   "main": "dist/index.js",
-  "module": "dist/index.esm.js",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
     "dist"
@@ -15,7 +15,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "@python-react-ml/core": "^0.1.0"
+    "@python-react-ml/core": "file:../core"
   },
   "peerDependencies": {
     "react": ">=16.8.0",

@@ -30,10 +30,11 @@ export class PythonEngine {
 
   private async initializeWeb(): Promise<void> {
     // Load Pyodide in a Web Worker for better performance
-    this.worker = new Worker(
-      new URL('./pyodide-worker.js', import.meta.url),
-      { type: 'module' }
-    );
+    if (typeof window !== 'undefined' && 'Worker' in window) {
+      this.worker = new Worker('/pyodide-worker.js');
+    } else {
+      throw new Error('Web Workers not supported in this environment');
+    }
 
     return new Promise((resolve, reject) => {
       const handleMessage = (event: MessageEvent) => {
@@ -47,8 +48,8 @@ export class PythonEngine {
         }
       };
 
-      this.worker.addEventListener('message', handleMessage);
-      this.worker.postMessage({ 
+      this.worker!.addEventListener('message', handleMessage);
+      this.worker!.postMessage({ 
         type: 'init', 
         pyodideUrl: this.options.pyodideUrl || 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js'
       });
@@ -105,8 +106,8 @@ export class PythonEngine {
         }
       };
 
-      this.worker.addEventListener('message', handleMessage);
-      this.worker.postMessage({
+      this.worker!.addEventListener('message', handleMessage);
+      this.worker!.postMessage({
         type: 'load-model',
         bundle: {
           manifest: bundle.manifest,
@@ -144,8 +145,8 @@ export class PythonEngine {
         }
       };
 
-      this.worker.addEventListener('message', handleMessage);
-      this.worker.postMessage({
+      this.worker!.addEventListener('message', handleMessage);
+      this.worker!.postMessage({
         type: 'execute',
         modelId,
         functionName,

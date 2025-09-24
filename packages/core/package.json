@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Core Python execution engine for React and React Native",
   "main": "dist/index.js",
-  "module": "dist/index.esm.js",
+  "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
   "files": [
     "dist",
