@@ -5,8 +5,12 @@ import type {
   WorkerMessage,
   WorkerResponse,
   RuntimeStatus,
-  RuntimeError
+  RuntimeError,
+  RuntimeType,
+  IAdapter,
+  AdapterOptions
 } from './types';
+import { RuntimeAdapterFactory } from './adapters/factory';
 
 declare global {
   interface Window {
@@ -15,22 +19,27 @@ declare global {
 }
 
 export class PythonEngine {
-  private pyodide: any = null;
+  private adapter: IAdapter | null = null;
+  private adapterFactory: RuntimeAdapterFactory;
   private isInitialized = false;
-  private worker: Worker | null = null;
   private options: PythonEngineOptions;
   private status: RuntimeStatus = 'idle';
+  private initializationPromise: Promise<void> | null = null;
+  private onStatusChange?: (status: RuntimeStatus) => void;
+  
+  // Legacy support - kept for backward compatibility
+  private pyodide: any = null;
+  private worker: Worker | null = null;
   private pendingRequests = new Map<string, {
     resolve: (value: any) => void;
     reject: (error: Error) => void;
     timeout: NodeJS.Timeout;
   }>();
-  private initializationPromise: Promise<void> | null = null;
-  private onStatusChange?: (status: RuntimeStatus) => void;
 
   constructor(options: PythonEngineOptions) {
     this.options = options;
     this.onStatusChange = options.onStatusChange;
+    this.adapterFactory = RuntimeAdapterFactory.getInstance();
   }
 
   private setStatus(status: RuntimeStatus): void {
@@ -190,15 +199,34 @@ export class PythonEngine {
     throw new Error('Native platform not yet implemented');
   }
 
-  async loadModel(bundle: ModelBundle): Promise<PythonModel> {
+  async loadModel(bundle: ModelBundle, runtimeOverride?: RuntimeType): Promise<PythonModel> {
     if (!this.isInitialized) {
       await this.initialize();
     }
 
-    if (this.options.platform === 'web') {
-      return this.loadModelWeb(bundle);
-    } else {
-      return this.loadModelNative(bundle);
+    // Determine runtime to use
+    const runtime = runtimeOverride || bundle.manifest.runtime || this.detectRuntime(bundle);
+    
+    // Create and initialize adapter if not already done or runtime changed
+    if (!this.adapter || this.adapter.runtime !== runtime) {
+      if (this.adapter) {
+        await this.adapter.cleanup();
+      }
+      
+      const adapterOptions = this.createAdapterOptions();
+      this.adapter = this.adapterFactory.createAdapter(runtime, adapterOptions);
+      await this.adapter.initialize(adapterOptions);
+    }
+
+    // Load model using adapter
+    this.setStatus('loading');
+    try {
+      const model = await this.adapter.load(bundle);
+      this.setStatus('ready');
+      return model;
+    } catch (error) {
+      this.setStatus('error');
+      throw error;
     }
   }
 
@@ -344,5 +372,51 @@ export class PythonEngine {
     
     this.isInitialized = false;
     this.initializationPromise = null;
+    
+    // Clean up adapter if using new system
+    if (this.adapter) {
+      await this.adapter.cleanup();
+      this.adapter = null;
+    }
+  }
+
+  private detectRuntime(bundle: ModelBundle): RuntimeType {
+    // If bundle has runtime specified, use it
+    if (bundle.manifest.runtime) {
+      return bundle.manifest.runtime;
+    }
+    
+    // Auto-detect based on files and manifest
+    if (bundle.files) {
+      // Check for ONNX model files
+      for (const filename of Object.keys(bundle.files)) {
+        if (filename.endsWith('.onnx')) {
+          return 'onnx';
+        }
+        if (filename.includes('tensorflow') || filename.includes('tfjs') || filename.endsWith('.json')) {
+          return 'tfjs';
+        }
+      }
+    }
+    
+    // Check for Python-specific indicators
+    if (bundle.manifest.python_version || bundle.manifest.dependencies?.length || bundle.code) {
+      return 'pyodide';
+    }
+    
+    // Use factory's environment detection as fallback
+    return this.adapterFactory.detectBestRuntime();
+  }
+
+  private createAdapterOptions(): AdapterOptions {
+    return {
+      enableLogging: this.options.enableLogging || false,
+      timeout: this.options.timeout || 60000,
+      memoryLimit: this.options.memoryLimit || 512,
+      gpuAcceleration: this.options.gpuAcceleration !== false, // Default to true
+      pyodideUrl: this.options.pyodideUrl,
+      onnxOptions: this.options.onnxOptions,
+      tfjsBackend: this.options.tfjsBackend
+    };
   }
 }

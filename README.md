@@ -7,7 +7,10 @@
 
 ## 🚀 Features
 
-- **Python in the Browser**: Run real Python code client-side using Pyodide
+- **Multi-Runtime Support**: Choose between Pyodide (Python), ONNX Runtime, or TensorFlow.js
+- **Python in the Browser**: Run real Python code client-side using Pyodide WebAssembly
+- **ONNX Models**: High-performance inference with ONNX Runtime Web
+- **TensorFlow.js Integration**: Native TensorFlow.js model support with GPU acceleration
 - **React Integration**: Seamless hooks and components for React apps
 - **React Native Support**: Native bridge for mobile applications
 - **Offline-First**: No internet required after initial model load
@@ -19,6 +22,7 @@
 
 - [Installation](#installation)
 - [Quick Start](#quick-start)
+- [Runtime Selection](#runtime-selection)
 - [Packages](#packages)
 - [Usage](#usage)
   - [React Web](#react-web)
@@ -114,7 +118,114 @@ function MyApp() {
 }
 ```
 
-## 📦 Packages
+## � Runtime Selection
+
+Python React ML supports multiple runtime engines to optimize for different model types and performance requirements:
+
+### 🐍 Pyodide Runtime (Python)
+**Best for**: Custom Python models, data preprocessing, complex ML pipelines
+
+- Full Python environment with NumPy, SciPy, scikit-learn, and more
+- Direct Python code execution in the browser via WebAssembly
+- Support for custom Python packages and dependencies
+- Ideal for models with complex preprocessing or custom logic
+
+```jsx
+import { useModel } from '@python-react-ml/react';
+
+function PyodideExample() {
+  const { model, predict, status } = useModel('/python-model.bundle.zip', {
+    runtime: 'pyodide'  // Default runtime
+  });
+  
+  // Your Python model.py will be executed directly
+  return <div>Python Model Status: {status}</div>;
+}
+```
+
+### ⚡ ONNX Runtime
+**Best for**: High-performance inference, production models, cross-platform compatibility
+
+- Optimized C++ inference engine compiled to WebAssembly
+- Support for models exported from PyTorch, TensorFlow, scikit-learn
+- Fastest inference performance with smaller bundle sizes
+- Hardware acceleration support (GPU via WebGL)
+
+```jsx
+import { useModel } from '@python-react-ml/react';
+
+function ONNXExample() {
+  const { model, predict, status } = useModel('/model.onnx', {
+    runtime: 'onnx'
+  });
+  
+  const handlePredict = async () => {
+    // Input as tensors - matches your ONNX model's input specification
+    const result = await predict({
+      input: new Float32Array([1.0, 2.0, 3.0, 4.0])
+    });
+    console.log('ONNX Result:', result);
+  };
+
+  return (
+    <div>
+      <p>ONNX Model Status: {status}</p>
+      <button onClick={handlePredict}>Run Inference</button>
+    </div>
+  );
+}
+```
+
+### 🧠 TensorFlow.js Runtime
+**Best for**: TensorFlow models, neural networks, GPU acceleration
+
+- Native TensorFlow.js execution with full ecosystem support
+- Excellent GPU acceleration via WebGL backend
+- Support for both SavedModel and GraphModel formats
+- Ideal for neural networks and deep learning models
+
+```jsx
+import { useModel } from '@python-react-ml/react';
+
+function TensorFlowExample() {
+  const { model, predict, status } = useModel('/tfjs-model/', {
+    runtime: 'tfjs',
+    tfjsBackend: 'webgl'  // Use GPU acceleration
+  });
+  
+  const handlePredict = async () => {
+    // Input as tensor-compatible arrays
+    const result = await predict([
+      [[1.0, 2.0], [3.0, 4.0]]  // Shape depends on your model
+    ]);
+    console.log('TensorFlow.js Result:', result);
+  };
+
+  return (
+    <div>
+      <p>TensorFlow.js Model Status: {status}</p>
+      <button onClick={handlePredict}>Run Inference</button>
+    </div>
+  );
+}
+```
+
+### Runtime Comparison
+
+| Runtime | Performance | Bundle Size | GPU Support | Model Types |
+|---------|------------|-------------|-------------|-------------|
+| **Pyodide** | Good | Large (~10MB+) | No | Python scripts, Custom ML |
+| **ONNX** | Excellent | Small (~2-5MB) | Yes (WebGL) | Standard ML models |
+| **TensorFlow.js** | Excellent | Medium (~5-8MB) | Yes (WebGL/WebGPU) | Neural networks, Deep learning |
+
+### Choosing the Right Runtime
+
+1. **Development/Prototyping**: Start with **Pyodide** for maximum flexibility
+2. **Production Performance**: Use **ONNX** for fastest inference with smallest bundles
+3. **TensorFlow Models**: Use **TensorFlow.js** for native TF model support and GPU acceleration
+4. **Complex Pipelines**: Use **Pyodide** when you need full Python ecosystem features
+
+## �📦 Packages
 
 | Package | Description | Size |
 |---------|-------------|------|
@@ -123,7 +234,57 @@ function MyApp() {
 | [`@python-react-ml/react-native`](./packages/react-native) | React Native native bridge | ![npm bundle size](https://img.shields.io/bundlephobia/minzip/@python-react-ml/react-native) |
 | [`@python-react-ml/cli`](./packages/cli) | CLI tools for bundling | ![npm bundle size](https://img.shields.io/bundlephobia/minzip/@python-react-ml/cli) |
 
-## 📚 Usage
+## � Migration Guide
+
+### Upgrading to Multi-Runtime Support
+
+If you're upgrading from a previous version, here's what changed:
+
+#### Before (v1.x)
+```jsx
+import { useModel } from '@python-react-ml/react';
+
+function MyApp() {
+  // Only Pyodide runtime was available
+  const { model, predict } = useModel('/model.bundle.zip');
+  // ...
+}
+```
+
+#### After (v2.0+)
+```jsx
+import { useModel } from '@python-react-ml/react';
+
+function MyApp() {
+  // Now you can specify runtime - Pyodide is still the default
+  const { model, predict } = useModel('/model.bundle.zip', {
+    runtime: 'pyodide'  // Explicit but optional for backward compatibility
+  });
+  
+  // Or use new runtime engines for better performance
+  const { model: onnxModel } = useModel('/model.onnx', {
+    runtime: 'onnx'     // High-performance ONNX Runtime
+  });
+  
+  const { model: tfModel } = useModel('/tfjs-model/', {
+    runtime: 'tfjs',    // TensorFlow.js with GPU acceleration
+    tfjsBackend: 'webgl'
+  });
+  // ...
+}
+```
+
+#### Breaking Changes
+- **None for existing Pyodide users**: Existing code continues to work unchanged
+- **New dependencies**: ONNX Runtime Web and TensorFlow.js are now included (but tree-shaken if unused)
+- **Bundle format**: New model formats supported (.onnx files, TensorFlow.js model directories)
+
+#### New Features
+- **Runtime selection**: Choose between `pyodide`, `onnx`, or `tfjs`
+- **Performance options**: GPU acceleration, optimized inference engines  
+- **Model format support**: ONNX (.onnx), TensorFlow.js (model.json + weights), Python bundles (.zip)
+
+## �📚 Usage
 
 ### React Web
 
@@ -133,7 +294,9 @@ function MyApp() {
 import { useModel } from '@python-react-ml/react';
 
 function ModelComponent() {
-  const { model, status, predict, reload } = useModel('/path/to/model.bundle.zip');
+  const { model, status, predict, reload } = useModel('/path/to/model.bundle.zip', {
+    runtime: 'pyodide'  // or 'onnx', 'tfjs'
+  });
 
   return (
     <div>
@@ -145,6 +308,59 @@ function ModelComponent() {
       )}
     </div>
   );
+}
+```
+
+#### Multi-Runtime Examples
+
+```jsx
+import { useModel } from '@python-react-ml/react';
+
+// Python model with Pyodide
+function PythonModel() {
+  const { model, predict, status } = useModel('/python-model.bundle.zip', {
+    runtime: 'pyodide'
+  });
+
+  const handlePredict = async () => {
+    const result = await predict([1.0, 2.0, 3.0]);
+    console.log('Python result:', result);
+  };
+
+  return <button onClick={handlePredict}>Run Python Model</button>;
+}
+
+// ONNX model for high performance
+function ONNXModel() {
+  const { model, predict, status } = useModel('/model.onnx', {
+    runtime: 'onnx'
+  });
+
+  const handlePredict = async () => {
+    const result = await predict({
+      input: new Float32Array([1.0, 2.0, 3.0, 4.0])
+    });
+    console.log('ONNX result:', result);
+  };
+
+  return <button onClick={handlePredict}>Run ONNX Model</button>;
+}
+
+// TensorFlow.js model with GPU acceleration
+function TensorFlowModel() {
+  const { model, predict, status } = useModel('/tfjs-model/', {
+    runtime: 'tfjs',
+    tfjsBackend: 'webgl'
+  });
+
+  const handlePredict = async () => {
+    const result = await predict([
+      [[0.1, 0.2], [0.3, 0.4]]
+    ]);
+    console.log('TensorFlow.js result:', result);
+  };
+
+  return <button onClick={handlePredict}>Run TF.js Model</button>;
 }
 ```
 
@@ -388,11 +604,15 @@ We will see how can we optimize it in the long run
 
 ## 🗺️ Roadmap
 
-- [ ] Support for TensorFlow.js integration
+- [x] **Multi-Runtime Support**: Pyodide, ONNX Runtime, and TensorFlow.js ✅
+- [x] **ONNX Runtime Integration**: High-performance inference with WebAssembly ✅  
+- [x] **TensorFlow.js Integration**: Native TF.js support with GPU acceleration ✅
 - [ ] Model caching and lazy loading
-- [ ] Performance optimizations
-- [ ] More ML framework examples
-- [ ] Advanced debugging tools
+- [ ] Performance optimizations and benchmarks
+- [ ] Advanced model bundling and compression
+- [ ] More ML framework examples (PyTorch, Hugging Face)
+- [ ] Advanced debugging and profiling tools
+- [ ] Model versioning and A/B testing utilities
 
 ## 📄 License
 

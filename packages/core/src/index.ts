@@ -1,10 +1,15 @@
 export * from './types';
 export * from './pythonEngine';
 export * from './modelLoader';
+export * from './adapters/factory';
+export { BaseAdapter } from './adapters/base';
+export { PyodideAdapter } from './adapters/pyodide';
+export { ONNXAdapter } from './adapters/onnx';
+export { TFJSAdapter } from './adapters/tfjs';
 
 import { PythonEngine } from './pythonEngine';
 import { fetchBundle, extractBundle, loadPythonFile } from './modelLoader';
-import type { ModelLoadOptions, PythonModel, PythonEngineOptions, PythonModelManifest } from './types';
+import type { ModelLoadOptions, PythonModel, PythonEngineOptions, PythonModelManifest, RuntimeType } from './types';
 
 export class PythonReactML {
   private engine: PythonEngine;
@@ -13,13 +18,13 @@ export class PythonReactML {
     this.engine = new PythonEngine(options);
   }
 
-  async loadModelFromBundle(url: string): Promise<PythonModel> {
+  async loadModelFromBundle(url: string, runtime?: RuntimeType): Promise<PythonModel> {
     const bundleBytes = await fetchBundle(url);
     const bundle = await extractBundle(bundleBytes);
-    return await this.engine.loadModel(bundle);
+    return await this.engine.loadModel(bundle, runtime);
   }
 
-  async loadModelFromFile(filePath: string): Promise<PythonModel> {
+  async loadModelFromFile(filePath: string, runtime?: RuntimeType): Promise<PythonModel> {
     const { code, manifest } = await loadPythonFile(filePath);
     
     const bundle = {
@@ -32,6 +37,21 @@ export class PythonReactML {
         bundle_version: '1.0',
         files: {},
         sha256: 'generated',
+        runtime: runtime || 'pyodide' as RuntimeType,
+        inputs: [{
+          name: 'data',
+          type: 'object' as const,
+          dtype: 'float32',
+          shape: [1],
+          description: 'Input data for prediction'
+        }],
+        outputs: [{
+          name: 'result',
+          type: 'object' as const,
+          dtype: 'float32', 
+          shape: [1],
+          description: 'Prediction result'
+        }],
         runtime_hints: {
           pyodide: true,
           native: false,
@@ -51,7 +71,7 @@ export class PythonReactML {
       files: {}
     };
     
-    return await this.engine.loadModel(bundle);
+    return await this.engine.loadModel(bundle, runtime);
   }
 
   async cleanup(): Promise<void> {
