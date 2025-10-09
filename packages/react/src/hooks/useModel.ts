@@ -8,7 +8,8 @@ import {
   type ModelProgress,
   type RuntimeStatus,
   type RuntimeError,
-  type PythonEngineOptions
+  type PythonEngineOptions,
+  type RuntimeType
 } from 'python-react-ml';
 
 export interface UseModelOptions {
@@ -24,10 +25,18 @@ export interface UseModelOptions {
   onProgress?: (progress: ModelProgress) => void;
   /** Python engine platform */
   platform?: 'web' | 'native';
+  /** Runtime to use for model execution */
+  runtime?: RuntimeType;
   /** Pyodide URL for web platform */
   pyodideUrl?: string;
   /** Enable logging */
   enableLogging?: boolean;
+  /** GPU acceleration (ONNX/TFJS) */
+  gpuAcceleration?: boolean;
+  /** ONNX-specific options */
+  onnxOptions?: any;
+  /** TensorFlow.js backend */
+  tfjsBackend?: string;
   /** Memory limit */
   memoryLimit?: number;
   /** Operation timeout */
@@ -68,6 +77,9 @@ export function useModel(
       enableLogging: options.enableLogging,
       memoryLimit: options.memoryLimit,
       timeout: options.timeout,
+      gpuAcceleration: options.gpuAcceleration,
+      onnxOptions: options.onnxOptions,
+      tfjsBackend: options.tfjsBackend,
       onStatusChange: (runtimeStatus: RuntimeStatus) => {
         // Map runtime status to model status
         const modelStatusMap: Record<RuntimeStatus, ModelStatus> = {
@@ -141,7 +153,7 @@ export function useModel(
           message: `Loading model... (Attempt ${attempt}/${maxRetries + 1})` 
         });
 
-        const loadedModel = await engine.loadModelFromBundle(targetUrl);
+        const loadedModel = await engine.loadModelFromBundle(targetUrl, options.runtime);
 
         if (abortControllerRef.current?.signal.aborted) {
           loadedModel.cleanup?.();

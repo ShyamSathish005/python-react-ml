@@ -1,3 +1,16 @@
+// Runtime types
+export type RuntimeType = 'pyodide' | 'onnx' | 'tfjs';
+
+// Model input/output schema
+export interface ModelIOSchema {
+  name: string;
+  type: 'tensor' | 'array' | 'object' | 'string' | 'number' | 'boolean';
+  shape?: number[];
+  dtype?: 'float32' | 'int32' | 'uint8' | 'bool' | 'string';
+  description?: string;
+  required?: boolean;
+}
+
 export interface PythonModelManifest {
   // Core metadata
   name: string;
@@ -6,10 +19,16 @@ export interface PythonModelManifest {
   author?: string;
   license?: string;
   
-  // Python configuration
-  entrypoint: string;
-  python_version: string;
-  dependencies: string[];
+  // Runtime specification
+  runtime: RuntimeType;
+  
+  // Python configuration (for pyodide runtime)
+  entrypoint?: string;
+  python_version?: string;
+  dependencies?: string[];
+  
+  // Model file (for onnx/tfjs runtime)
+  model_file?: string;
   
   // Bundle integrity
   bundle_version: string;
@@ -18,14 +37,20 @@ export interface PythonModelManifest {
   
   // Runtime configuration
   runtime_hints: {
-    pyodide: boolean;
-    native: boolean;
+    pyodide?: boolean;
+    native?: boolean;
     memory_limit?: number;
     timeout?: number;
+    gpu_acceleration?: boolean;
+    quantized?: boolean;
   };
   
-  // API specification
-  functions: {
+  // Model I/O specification
+  inputs: ModelIOSchema[];
+  outputs: ModelIOSchema[];
+  
+  // Legacy API specification (for backward compatibility)
+  functions?: {
     [key: string]: {
       description?: string;
       inputs: { [key: string]: string };
@@ -62,6 +87,9 @@ export interface PythonEngineOptions {
   enableLogging?: boolean;
   memoryLimit?: number;
   timeout?: number;
+  gpuAcceleration?: boolean;
+  onnxOptions?: any;
+  tfjsBackend?: string;
   onStatusChange?: (status: RuntimeStatus) => void;
   onProgress?: (progress: number) => void;
   onError?: (error: RuntimeError) => void;
@@ -77,7 +105,7 @@ export type RuntimeStatus =
   | 'terminated';
 
 export interface RuntimeError {
-  type: 'initialization' | 'loading' | 'execution' | 'network' | 'timeout' | 'memory';
+  type: 'initialization' | 'loading' | 'execution' | 'network' | 'timeout' | 'memory' | 'validation';
   message: string;
   details?: any;
   timestamp: string;
@@ -147,4 +175,43 @@ export interface WorkerResponse {
   payload?: any;
   error?: RuntimeError;
   progress?: ModelProgress;
+}
+
+// Multi-Runtime Adapter System
+export interface IAdapter {
+  readonly runtime: RuntimeType;
+  readonly status: RuntimeStatus;
+  
+  // Core lifecycle methods
+  initialize(options?: AdapterOptions): Promise<void>;
+  load(bundle: ModelBundle): Promise<PythonModel>;
+  predict(model: PythonModel, inputs: any): Promise<any>;
+  unload(model: PythonModel): Promise<void>;
+  cleanup(): Promise<void>;
+  
+  // Status and error handling
+  getStatus(): RuntimeStatus;
+  getLastError(): RuntimeError | null;
+  
+  // Event handlers
+  onStatusChange?(status: RuntimeStatus): void;
+  onProgress?(progress: ModelProgress): void;
+  onError?(error: RuntimeError): void;
+}
+
+export interface AdapterOptions {
+  enableLogging?: boolean;
+  memoryLimit?: number;
+  timeout?: number;
+  gpuAcceleration?: boolean;
+  // Runtime-specific options
+  pyodideUrl?: string; // for PyodideAdapter
+  onnxOptions?: any;   // for ONNXAdapter
+  tfjsBackend?: string; // for TFJSAdapter
+}
+
+export interface AdapterFactory {
+  createAdapter(runtime: RuntimeType, options?: AdapterOptions): IAdapter;
+  getSupportedRuntimes(): RuntimeType[];
+  isRuntimeSupported(runtime: RuntimeType): boolean;
 }

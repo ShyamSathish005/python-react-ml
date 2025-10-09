@@ -8,6 +8,10 @@
     "react-native",
     "python",
     "pyodide",
+    "onnx",
+    "tensorflow",
+    "tensorflowjs",
+    "multi-runtime",
     "offline-ml",
     "client-side-ml",
     "ml-inference"
