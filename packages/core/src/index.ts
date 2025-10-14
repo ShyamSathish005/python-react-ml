@@ -1,11 +1,23 @@
+// Core exports
 export * from './types';
 export * from './pythonEngine';
 export * from './modelLoader';
+
+// Phase 2: Multi-Runtime Adapters
 export * from './adapters/factory';
 export { BaseAdapter } from './adapters/base';
 export { PyodideAdapter } from './adapters/pyodide';
 export { ONNXAdapter } from './adapters/onnx';
 export { TFJSAdapter } from './adapters/tfjs';
+
+// Phase 2.5: Advanced Features
+export * from './types-phase2.5';
+export { WebGPUAdapter } from './adapters/webgpu';
+export { AutoOptimizer, autoOptimizer } from './optimizer/auto-optimizer';
+export { ModelRegistry, modelRegistry } from './registry/model-registry';
+export { ModelPipeline, createPipeline } from './pipeline/model-pipeline';
+export { PrivacyManager, privacyManager } from './privacy/privacy-manager';
+export { ModelMonitor, modelMonitor } from './monitoring/model-monitor';
 
 import { PythonEngine } from './pythonEngine';
 import { fetchBundle, extractBundle, loadPythonFile } from './modelLoader';

@@ -1,31 +1,8 @@
-import { ModelError, RuntimeError, ModelProgress, UseModelResult, PythonReactML, PythonModel } from 'python-react-ml';
-export { ModelBundle, ModelError, ModelProgress, ModelStatus, PythonModel, PythonModelManifest, RuntimeError, RuntimeStatus } from 'python-react-ml';
+import { PythonReactML, PythonModel as PythonModel$1, UseModelResult, ModelError as ModelError$1 } from 'python-react-ml';
+export { DeviceCapabilities, ExplainabilityMethod, ExtendedRuntimeType, InferenceMetrics, ModelBundle, ModelError, ModelExplanation, ModelProgress, ModelStatus, MonitoringOptions, OptimizationOptions, PrivacyOptions, PythonModel, PythonModelManifest, RealtimeOptions, RegistryOptions, RuntimeError, RuntimeStatus, WebGPUCapabilities } from 'python-react-ml';
+import { ExtendedRuntimeType, OptimizationOptions, RegistryOptions, PrivacyOptions, MonitoringOptions, RealtimeOptions, ModelError, PythonModel, ModelStatus, ModelExplanation, InferenceMetrics } from '@python-react-ml/core';
 import * as react_jsx_runtime from 'react/jsx-runtime';
 import React, { ReactNode, Component, ErrorInfo } from 'react';
-
-interface UseModelOptions {
-    /** Auto-load model when URL changes */
-    autoLoad?: boolean;
-    /** Retry loading on failure */
-    retryOnError?: boolean;
-    /** Maximum retry attempts */
-    maxRetries?: number;
-    /** Custom error handler */
-    onError?: (error: ModelError | RuntimeError) => void;
-    /** Progress callback */
-    onProgress?: (progress: ModelProgress) => void;
-    /** Python engine platform */
-    platform?: 'web' | 'native';
-    /** Pyodide URL for web platform */
-    pyodideUrl?: string;
-    /** Enable logging */
-    enableLogging?: boolean;
-    /** Memory limit */
-    memoryLimit?: number;
-    /** Operation timeout */
-    timeout?: number;
-}
-declare function useModel(modelUrl: string, options?: UseModelOptions): UseModelResult;
 
 interface UsePythonEngineOptions {
     pyodideUrl?: string;
@@ -46,9 +23,64 @@ declare function usePythonEngine(options?: UsePythonEngineOptions): {
     error: string | null;
 };
 
+/**
+ * Enhanced useModel Hook for Phase 2.5
+ *
+ * Supports all Phase 2.5 features:
+ * - Auto-optimization
+ * - Model registry
+ * - Privacy features
+ * - Monitoring & explainability
+ * - Real-time mode
+ */
+
+interface UseModelEnhancedOptions {
+    runtime?: ExtendedRuntimeType;
+    platform?: 'web' | 'native';
+    autoLoad?: boolean;
+    optimization?: OptimizationOptions;
+    registry?: RegistryOptions;
+    privacy?: PrivacyOptions;
+    monitoring?: MonitoringOptions;
+    realtime?: RealtimeOptions;
+    onError?: (error: ModelError) => void;
+    onReady?: () => void;
+    onDriftDetected?: (severity: string) => void;
+}
+interface UseModelEnhancedResult {
+    model: PythonModel | null;
+    status: ModelStatus;
+    error: ModelError | null;
+    predict: (input: any, options?: PredictOptions) => Promise<any>;
+    predictSync: (input: any) => any | null;
+    unload: () => Promise<void>;
+    reload: () => Promise<void>;
+    explain: (input: any, method?: string) => Promise<ModelExplanation | null>;
+    profile: () => Promise<any>;
+    optimize: () => Promise<any>;
+    getMetrics: () => InferenceMetrics | null;
+    getPrivacyGuarantee: () => any;
+    isReady: boolean;
+    isLoading: boolean;
+    isPredicting: boolean;
+    isOptimized: boolean;
+    metrics: InferenceMetrics | null;
+    version: string | null;
+}
+interface PredictOptions {
+    explain?: boolean;
+    profile?: boolean;
+    timeout?: number;
+    priority?: 'low' | 'normal' | 'high';
+}
+/**
+ * Enhanced useModel hook with Phase 2.5 features
+ */
+declare function useModelEnhanced(modelUrl: string, options?: UseModelEnhancedOptions): UseModelEnhancedResult;
+
 interface ModelContextValue {
     engine: any;
-    loadModel: (url: string) => Promise<PythonModel>;
+    loadModel: (url: string) => Promise<PythonModel$1>;
     isInitialized: boolean;
     error: string | null;
 }
@@ -59,7 +91,7 @@ interface ModelProviderProps {
 }
 interface ModelLoaderProps {
     modelUrl: string;
-    onLoad?: (model: PythonModel) => void;
+    onLoad?: (model: PythonModel$1) => void;
     onError?: (error: Error) => void;
     children?: (result: UseModelResult) => ReactNode;
 }
@@ -81,7 +113,7 @@ interface ErrorBoundaryProps {
     resetOnPropsChange?: any[];
 }
 interface ModelErrorBoundaryProps extends ErrorBoundaryProps {
-    onModelError?: (error: ModelError) => void;
+    onModelError?: (error: ModelError$1) => void;
 }
 /**
  * Generic Error Boundary for catching JavaScript errors in React components
@@ -114,4 +146,4 @@ declare function withModelErrorBoundary<P extends object>(Component: React.Compo
     displayName: string;
 };
 
-export { ErrorBoundary, ModelContextValue, ModelErrorBoundary, ModelLoader, ModelLoaderProps, ModelProviderProps, PythonEngineState, PythonModelProvider, UseModelOptions, UsePythonEngineOptions, useModel, useModelContext, usePythonEngine, withErrorBoundary, withModelErrorBoundary };
+export { ErrorBoundary, ModelContextValue, ModelErrorBoundary, ModelLoader, ModelLoaderProps, ModelProviderProps, PythonEngineState, PythonModelProvider, UseModelEnhancedOptions, UseModelEnhancedResult, UsePythonEngineOptions, useModelEnhanced as useModel, useModelContext, useModelEnhanced, usePythonEngine, withErrorBoundary, withModelErrorBoundary };
