@@ -17,29 +17,6 @@
 
 ---
 
-## System Architecture
-
-```mermaid
-graph TD
-    subgraph Client [React Application]
-        Comp[React Component] <--> Hook[useModel Hook]
-    end
-
-    subgraph Core [Python-React-ML Core]
-        Hook <--> Pool[WorkerPoolManager (Singleton)]
-        
-        Pool -- "Watchdog Timer" --> W1[Worker 1]
-        Pool --> W2[Worker 2]
-        Pool --> WN[Worker N]
-    end
-
-    subgraph Runtime [Isolated Environment]
-        W1 <--> Engine[Pyodide / ONNX Runtime]
-    end
-
-    style Pool fill:#f9f,stroke:#333,stroke-width:2px
-    style Engine fill:#bbf,stroke:#333,stroke-width:2px
-```
 
 ## Core Features
 
