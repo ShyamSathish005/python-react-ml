@@ -6,6 +6,7 @@ import {
     PythonEngineOptions,
     RuntimeStatus
 } from '../types';
+import { ModelError, PythonErrorType } from '../types/Errors';
 
 interface WorkerContainer {
     id: string;
@@ -23,6 +24,7 @@ interface RequestHandler {
     type: string;
     payload: any;
     retries: number;
+    startTime: number;
 }
 
 /**
@@ -57,6 +59,15 @@ export class WorkerPoolManager {
     configure(options: PythonEngineOptions, workerPath?: string) {
         this.options = options;
         if (workerPath) this.workerPath = workerPath;
+    }
+
+    /**
+     * Terminate all workers and clear the pool.
+     */
+    disposeAll() {
+        for (const [id] of this.workers) {
+            this.terminate(id);
+        }
     }
 
     async acquireWorker(): Promise<string> {
@@ -122,11 +133,19 @@ export class WorkerPoolManager {
 
             container.pendingRequests.delete(response.id);
 
+            // Telemetry: measure execution time
+            const executionTimeMs = Date.now() - handler.startTime;
+            const enhancedPayload = response.payload && typeof response.payload === 'object'
+                ? { ...response.payload, executionTimeMs }
+                : response.payload;
+
             if (response.type === 'error') {
-                handler.reject(new Error(response.error?.message || 'Unknown worker error'));
+                // Use structured error if available
+                const errorObj = response.error || new Error('Unknown worker error');
+                handler.reject(errorObj as any);
             } else {
                 container.status = 'idle'; // Assume idle after response
-                handler.resolve(response.payload);
+                handler.resolve(enhancedPayload);
             }
         };
     }
@@ -141,7 +160,8 @@ export class WorkerPoolManager {
                 reject: (err) => { clearTimeout(timeout); reject(err); },
                 type: 'init',
                 payload: null,
-                retries: 0
+                retries: 0,
+                startTime: Date.now()
             });
 
             container.worker.postMessage({
@@ -245,11 +265,38 @@ export class WorkerPoolManager {
                 reject,
                 type,
                 payload,
-                retries: 0
+                retries: 0,
+                startTime: Date.now()
             };
 
             container.pendingRequests.set(reqId, handler);
             this.internalExecute(container, handler, reqId);
+
+            // Watchdog Timeout
+            const timeoutMs = this.options?.timeout || 30000;
+            if (timeoutMs > 0) {
+                setTimeout(() => {
+                    if (container.pendingRequests.has(reqId)) {
+                        // Request still pending -> TIMEOUT
+                        const timeoutError = new ModelError(
+                            PythonErrorType.TIMEOUT,
+                            `Worker timed out after ${timeoutMs}ms`,
+                            undefined,
+                            'Optimizing your model or increasing the timeout might help.'
+                        );
+
+                        console.warn(`Worker ${container.id} timed out. Terminating...`);
+
+                        // Remove this specific request so it doesn't get retried by crash handler
+                        container.pendingRequests.delete(reqId);
+                        handler.reject(timeoutError);
+
+                        // Kill and recover environment (simulating a crash)
+                        // Pass the timeout error just for logging context, though we already rejected the main request
+                        this.handleWorkerCrash(container, timeoutError);
+                    }
+                }, timeoutMs);
+            }
         });
     }
 

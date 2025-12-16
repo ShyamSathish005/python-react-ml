@@ -103,6 +103,25 @@ var BaseAdapter = class {
   }
 };
 
+// src/types/Errors.ts
+var ModelError = class _ModelError extends Error {
+  constructor(type, message, pythonTraceback, suggestion) {
+    super(message);
+    this.name = "ModelError";
+    this.type = type;
+    this.pythonTraceback = pythonTraceback;
+    this.suggestion = suggestion;
+  }
+  static fromJSON(json) {
+    return new _ModelError(
+      json.type || "RUNTIME" /* RUNTIME */,
+      json.message || "Unknown error",
+      json.pythonTraceback,
+      json.suggestion
+    );
+  }
+};
+
 // src/pool/workerPool.ts
 var WorkerPoolManager = class _WorkerPoolManager {
   constructor() {
@@ -121,6 +140,14 @@ var WorkerPoolManager = class _WorkerPoolManager {
     this.options = options;
     if (workerPath)
       this.workerPath = workerPath;
+  }
+  /**
+   * Terminate all workers and clear the pool.
+   */
+  disposeAll() {
+    for (const [id] of this.workers) {
+      this.terminate(id);
+    }
   }
   async acquireWorker() {
     for (const [id, container] of this.workers.entries()) {
@@ -168,11 +195,14 @@ var WorkerPoolManager = class _WorkerPoolManager {
         return;
       }
       container.pendingRequests.delete(response.id);
+      const executionTimeMs = Date.now() - handler.startTime;
+      const enhancedPayload = response.payload && typeof response.payload === "object" ? { ...response.payload, executionTimeMs } : response.payload;
       if (response.type === "error") {
-        handler.reject(new Error(response.error?.message || "Unknown worker error"));
+        const errorObj = response.error || new Error("Unknown worker error");
+        handler.reject(errorObj);
       } else {
         container.status = "idle";
-        handler.resolve(response.payload);
+        handler.resolve(enhancedPayload);
       }
     };
   }
@@ -191,7 +221,8 @@ var WorkerPoolManager = class _WorkerPoolManager {
         },
         type: "init",
         payload: null,
-        retries: 0
+        retries: 0,
+        startTime: Date.now()
       });
       container.worker.postMessage({
         id: msgId,
@@ -274,10 +305,28 @@ var WorkerPoolManager = class _WorkerPoolManager {
         reject,
         type,
         payload,
-        retries: 0
+        retries: 0,
+        startTime: Date.now()
       };
       container.pendingRequests.set(reqId, handler);
       this.internalExecute(container, handler, reqId);
+      const timeoutMs = this.options?.timeout || 3e4;
+      if (timeoutMs > 0) {
+        setTimeout(() => {
+          if (container.pendingRequests.has(reqId)) {
+            const timeoutError = new ModelError(
+              "TIMEOUT" /* TIMEOUT */,
+              `Worker timed out after ${timeoutMs}ms`,
+              void 0,
+              "Optimizing your model or increasing the timeout might help."
+            );
+            console.warn(`Worker ${container.id} timed out. Terminating...`);
+            container.pendingRequests.delete(reqId);
+            handler.reject(timeoutError);
+            this.handleWorkerCrash(container, timeoutError);
+          }
+        }, timeoutMs);
+      }
     });
   }
   internalExecute(container, handler, forceId) {

@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { 
-  PythonReactML, 
-  type PythonModel, 
-  type UseModelResult, 
+import {
+  PythonReactML,
+  type PythonModel,
+  type UseModelResult,
   type ModelStatus,
   type ModelError,
   type ModelProgress,
@@ -44,7 +44,7 @@ export interface UseModelOptions {
 }
 
 export function useModel(
-  modelUrl: string, 
+  modelUrl: string,
   options: UseModelOptions = {}
 ): UseModelResult {
   const {
@@ -63,6 +63,14 @@ export function useModel(
   const [progress, setProgress] = useState<ModelProgress>({ status: 'idle' });
   const [isLoading, setIsLoading] = useState(false);
   const [isPredicting, setIsPredicting] = useState(false);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   // Refs for stability
   const engineRef = useRef<PythonReactML | null>(null);
@@ -147,10 +155,10 @@ export function useModel(
           throw new Error('Load operation was cancelled');
         }
 
-        setProgress({ 
-          status: 'loading', 
-          progress: 10, 
-          message: `Loading model... (Attempt ${attempt}/${maxRetries + 1})` 
+        setProgress({
+          status: 'loading',
+          progress: 10,
+          message: `Loading model... (Attempt ${attempt}/${maxRetries + 1})`
         });
 
         const loadedModel = await engine.loadModelFromBundle(targetUrl, options.runtime);
@@ -211,11 +219,12 @@ export function useModel(
 
     setIsPredicting(true);
     setStatus('ready'); // Keep as ready during prediction
-    
+
     try {
       const result = await model.predict(input);
       return result;
     } catch (err) {
+      if (!isMounted.current) return;
       const modelError: ModelError = {
         type: 'python',
         message: err instanceof Error ? err.message : 'Prediction failed',
@@ -225,7 +234,9 @@ export function useModel(
       setError(modelError);
       throw modelError;
     } finally {
-      setIsPredicting(false);
+      if (isMounted.current) {
+        setIsPredicting(false);
+      }
     }
   }, [model]);
 
@@ -273,6 +284,9 @@ export function useModel(
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
       unload();
       engineRef.current?.cleanup();
     };

@@ -15,11 +15,44 @@ function sendMessage(id, type, payload = null, error = null, progress = null) {
   postMessage(message);
 }
 
-function createError(type, message, details = null) {
+// Helper to map python exceptions
+function mapPythonException(exceptionName) {
+  if (!exceptionName) return 'RUNTIME';
+  const name = exceptionName;
+  if (name.includes('MemoryError')) return 'MEMORY';
+  if (name.includes('ModuleNotFoundError') || name.includes('ImportError')) return 'IMPORT';
+  if (name.includes('SyntaxError') || name.includes('IndentationError')) return 'SYNTAX';
+  if (name.includes('TimeoutError')) return 'TIMEOUT';
+  return 'RUNTIME';
+}
+
+function getSuggestion(type, message) {
+  if (type === 'MEMORY') return 'Try reducing the batch size or using a quantized model.';
+  if (type === 'IMPORT') return 'Ensure all dependencies are defined in the manifest.';
+  if (type === 'SYNTAX') return 'Check your python code for syntax errors.';
+  return undefined;
+}
+
+function createError(operationType, message, details = null) {
+  let errorType = 'RUNTIME';
+
+  if (details && details.type) {
+    errorType = mapPythonException(details.type);
+  } else if (operationType === 'initialization') {
+    // Keep initialization errors as is or map them
+    errorType = 'RUNTIME';
+  }
+
+  // Construct object compatible with ModelError
   return {
-    type,
-    message,
-    details,
+    type: errorType,
+    message: message,
+    pythonTraceback: details && details.traceback ? {
+      type: details.type || 'Error',
+      message: details.error || message,
+      traceback: details.traceback
+    } : undefined,
+    suggestion: getSuggestion(errorType, message),
     timestamp: new Date().toISOString()
   };
 }
@@ -38,7 +71,7 @@ async function initializePyodide(id, config) {
   }
 
   initializationPromise = performInitialization(id, config);
-  
+
   try {
     await initializationPromise;
     isInitialized = true;
@@ -61,7 +94,7 @@ async function performInitialization(id, config) {
 
     // Import Pyodide
     importScripts(config.pyodideUrl);
-    
+
     sendMessage(id, 'progress', null, null, {
       status: 'downloading',
       progress: 30,
@@ -82,7 +115,7 @@ async function performInitialization(id, config) {
 
     // Install common ML packages
     await pyodide.loadPackage(['numpy', 'pandas', 'scikit-learn']);
-    
+
     // Set up error handling utilities in Python
     pyodide.runPython(`
 import sys
@@ -123,7 +156,7 @@ async function loadModel(id, payload) {
 
     const { manifest, code, files } = payload;
     const modelId = `model_${Math.random().toString(36).substring(2)}`;
-    
+
     sendMessage(id, 'progress', null, null, {
       status: 'loading',
       progress: 0,
@@ -214,7 +247,7 @@ if 'get_model_info' not in ${modelId}:
 `);
 
     loadedModels.set(modelId, manifest);
-    
+
     sendMessage(id, 'progress', null, null, {
       status: 'ready',
       progress: 100,
@@ -232,7 +265,7 @@ if 'get_model_info' not in ${modelId}:
 async function executeFunction(id, payload) {
   try {
     const { modelId, functionName, input } = payload;
-    
+
     if (!loadedModels.has(modelId)) {
       throw new Error(`Model ${modelId} not found`);
     }
@@ -243,7 +276,7 @@ async function executeFunction(id, payload) {
 
     // Set input data in Python environment
     pyodide.globals.set('input_data', input);
-    
+
     // Execute the function with comprehensive error handling
     const result = pyodide.runPython(`
 capture_python_error(lambda: {
@@ -284,14 +317,14 @@ elif hasattr(result, '__dict__'):  # custom objects
 result
 `);
 
-    sendMessage(id, 'predicted', { 
+    sendMessage(id, 'predicted', {
       result: finalResult.toJs({ dict_converter: Object.fromEntries })
     });
 
   } catch (error) {
-    sendMessage(id, 'error', null, createError('execution', `Function execution failed: ${error.message}`, { 
-      modelId: payload.modelId, 
-      functionName: payload.functionName 
+    sendMessage(id, 'error', null, createError('execution', `Function execution failed: ${error.message}`, {
+      modelId: payload.modelId,
+      functionName: payload.functionName
     }));
   }
 }
@@ -300,7 +333,7 @@ result
 function unloadModel(id, payload) {
   try {
     const { modelId } = payload;
-    
+
     if (loadedModels.has(modelId)) {
       pyodide.runPython(`
 # Clean up model namespace
@@ -327,9 +360,9 @@ function getStatus(id) {
 }
 
 // Enhanced message handler with proper error boundaries
-self.onmessage = async function(e) {
+self.onmessage = async function (e) {
   let messageId = 'unknown';
-  
+
   try {
     const { id, type, payload } = e.data;
     messageId = id;
@@ -342,23 +375,23 @@ self.onmessage = async function(e) {
       case 'init':
         await initializePyodide(id, payload);
         break;
-        
+
       case 'loadModel':
         await loadModel(id, payload);
         break;
-        
+
       case 'predict':
         await executeFunction(id, payload);
         break;
-        
+
       case 'unload':
         unloadModel(id, payload);
         break;
-        
+
       case 'status':
         getStatus(id);
         break;
-        
+
       default:
         sendMessage(id, 'error', null, createError('execution', `Unknown message type: ${type}`));
     }
@@ -368,7 +401,7 @@ self.onmessage = async function(e) {
 };
 
 // Handle worker errors
-self.onerror = function(error) {
+self.onerror = function (error) {
   postMessage({
     id: 'worker-error',
     type: 'error',
@@ -376,9 +409,9 @@ self.onerror = function(error) {
   });
 };
 
-self.onunhandledrejection = function(event) {
+self.onunhandledrejection = function (event) {
   postMessage({
-    id: 'worker-error', 
+    id: 'worker-error',
     type: 'error',
     error: createError('execution', `Unhandled promise rejection: ${event.reason}`, event.reason)
   });
