@@ -20,7 +20,8 @@
     "commander": "^11.0.0",
     "chalk": "^4.1.0",
     "archiver": "^6.0.0",
-    "ora": "^5.4.0"
+    "ora": "^5.4.0",
+    "@python-react-ml/compiler": "^0.0.1"
   },
   "devDependencies": {
     "tsup": "^7.0.0",
