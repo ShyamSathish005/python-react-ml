@@ -1,7 +1,7 @@
 {
   "name": "python-react-ml",
-  "version": "1.0.2",
-  "description": "Run Python ML models directly in React and React Native apps - no backend required",
+  "version": "2.0.0",
+  "description": "Production-grade Edge AI runtime for React. Orchestrates Pyodide & ONNX in background workers with fault tolerance.",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",

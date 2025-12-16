@@ -1,7 +1,7 @@
 {
   "name": "python-react-ml-cli",
-  "version": "1.0.0",
-  "description": "CLI tools for bundling and managing Python ML models",
+  "version": "2.0.0",
+  "description": "Production-grade Edge AI runtime for React. Orchestrates Pyodide & ONNX in background workers with fault tolerance.",
   "main": "dist/index.js",
   "bin": {
     "python-react-ml": "dist/cli.js",
@@ -28,7 +28,7 @@
   },
   "keywords": [
     "cli",
-    "python", 
+    "python",
     "bundling",
     "machine-learning"
   ],

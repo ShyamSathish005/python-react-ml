@@ -1,7 +1,7 @@
 {
   "name": "python-react-ml-react",
-  "version": "1.0.0", 
-  "description": "React hooks and components for Python ML models",
+  "version": "2.0.0",
+  "description": "Production-grade Edge AI runtime for React. Orchestrates Pyodide & ONNX in background workers with fault tolerance.",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -15,7 +15,7 @@
     "test": "jest"
   },
   "dependencies": {
-    "python-react-ml": "file:../core"
+    "python-react-ml": "^2.0.0"
   },
   "peerDependencies": {
     "react": ">=16.8.0",
