@@ -25,7 +25,7 @@ export class ManifestGenerator {
   private collectFiles(entryPath: string, baseDir: string): { [path: string]: any } {
     const files: { [path: string]: any } = {};
     const stats = fs.statSync(entryPath);
-    
+
     if (stats.isFile()) {
       const relativePath = path.relative(baseDir, entryPath);
       files[relativePath] = {
@@ -40,14 +40,14 @@ export class ManifestGenerator {
         Object.assign(files, this.collectFiles(fullPath, baseDir));
       }
     }
-    
+
     return files;
   }
 
   generateManifest(options: BundleOptions): PythonModelManifest {
     const entryDir = path.dirname(options.entry);
     const files = this.collectFiles(entryDir, entryDir);
-    
+
     // Calculate bundle hash
     const bundleContent = JSON.stringify(files, null, 2);
     const bundleHash = crypto.createHash('sha256').update(bundleContent).digest('hex');
@@ -58,22 +58,27 @@ export class ManifestGenerator {
       description: options.description || `Python ML model: ${options.name}`,
       author: options.author,
       license: 'MIT',
-      
+
+      // Default to pyodide for CLI bundles
+      runtime: 'pyodide',
+      inputs: [], // To be populated by analysis
+      outputs: [],
+
       entrypoint: path.basename(options.entry),
       python_version: options.pythonVersion || '3.11',
       dependencies: options.dependencies || [],
-      
+
       bundle_version: '1.0',
       sha256: bundleHash,
       created_at: new Date().toISOString(),
-      
+
       runtime_hints: {
         pyodide: true,
         native: false,
         memory_limit: options.memoryLimit || 512,
         timeout: options.timeout || 30000
       },
-      
+
       functions: {
         predict: {
           description: 'Main prediction function',
@@ -81,7 +86,7 @@ export class ManifestGenerator {
           outputs: { result: 'any' }
         }
       },
-      
+
       files
     };
 

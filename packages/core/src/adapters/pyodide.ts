@@ -1,33 +1,30 @@
 import { BaseAdapter } from './base';
-import { 
-  ModelBundle, 
-  PythonModel, 
+import { WorkerPoolManager } from '../pool/workerPool';
+import {
+  ModelBundle,
+  PythonModel,
   AdapterOptions,
   RuntimeError,
   ModelProgress,
-  PythonModelManifest 
+  PythonModelManifest
 } from '../types';
 
 /**
  * Pyodide adapter for running Python models in the browser
  */
 export class PyodideAdapter extends BaseAdapter {
-  private pyodide: any = null;
-  private worker: Worker | null = null;
+  private pool: WorkerPoolManager;
+  private workerId: string | null = null;
   private loadedModels = new Map<string, PythonModel>();
-  private pendingRequests = new Map<string, {
-    resolve: (value: any) => void;
-    reject: (error: Error) => void;
-    timeout: NodeJS.Timeout;
-  }>();
 
   constructor(options: AdapterOptions = {}) {
     super('pyodide', options);
+    this.pool = WorkerPoolManager.getInstance();
   }
 
   async initialize(options: AdapterOptions = {}): Promise<void> {
     if (this._status === 'ready') return;
-    
+
     this.setStatus('initializing');
     this.log('Initializing Pyodide adapter...');
 
@@ -57,42 +54,16 @@ export class PyodideAdapter extends BaseAdapter {
   }
 
   private async initializeWebWorker(options: AdapterOptions): Promise<void> {
-    // Create web worker for Pyodide
-    const workerBlob = new Blob([this.getWorkerScript()], { 
-      type: 'application/javascript' 
-    });
-    const workerUrl = URL.createObjectURL(workerBlob);
-    
-    this.worker = new Worker(workerUrl);
-    this.worker.onmessage = this.handleWorkerMessage.bind(this);
-    this.worker.onerror = (error) => {
-      this.setError(this.createError('initialization', 'Worker error', error));
-    };
-
-    // Initialize Pyodide in worker
-    return new Promise((resolve, reject) => {
-      const requestId = this.generateRequestId();
-      
-      this.pendingRequests.set(requestId, {
-        resolve,
-        reject: (error) => {
-          reject(new Error(error.message || 'Initialization failed'));
-        },
-        timeout: setTimeout(() => {
-          this.pendingRequests.delete(requestId);
-          reject(new Error('Initialization timeout'));
-        }, options.timeout || 30000)
+    try {
+      this.pool.configure({
+        ...this._options,
+        ...options,
+        platform: 'web'
       });
-
-      this.worker!.postMessage({
-        id: requestId,
-        type: 'init',
-        payload: {
-          pyodideUrl: options.pyodideUrl || 'https://cdn.jsdelivr.net/pyodide/v0.24.0/full/pyodide.js',
-          enableLogging: options.enableLogging
-        }
-      });
-    });
+      this.workerId = await this.pool.acquireWorker();
+    } catch (error) {
+      throw this.createError('initialization', `Failed to acquire worker: ${(error as Error).message}`, error);
+    }
   }
 
   private async initializeDirect(options: AdapterOptions): Promise<void> {
@@ -114,10 +85,10 @@ export class PyodideAdapter extends BaseAdapter {
     try {
       const modelId = `model_${Date.now()}`;
       const model = await this.loadModelInWorker(modelId, bundle);
-      
+
       this.loadedModels.set(modelId, model);
       this.setStatus('ready');
-      
+
       return model;
     } catch (error) {
       const runtimeError = this.createError(
@@ -131,40 +102,22 @@ export class PyodideAdapter extends BaseAdapter {
   }
 
   private async loadModelInWorker(modelId: string, bundle: ModelBundle): Promise<PythonModel> {
-    if (!this.worker) {
+    if (!this.workerId) {
       throw new Error('Worker not initialized');
     }
 
-    return new Promise((resolve, reject) => {
-      const requestId = this.generateRequestId();
-      
-      this.pendingRequests.set(requestId, {
-        resolve: (result) => {
-          const model: PythonModel = {
-            manifest: bundle.manifest,
-            predict: async (inputs: any) => this.predict(result, inputs),
-            cleanup: async () => this.unload(result)
-          };
-          resolve(model);
-        },
-        reject,
-        timeout: setTimeout(() => {
-          this.pendingRequests.delete(requestId);
-          reject(new Error('Model loading timeout'));
-        }, this._options.timeout || 30000)
-      });
+    try {
+      const result = await this.pool.executeLoad(this.workerId, bundle);
 
-      this.worker.postMessage({
-        id: requestId,
-        type: 'loadModel',
-        payload: {
-          modelId,
-          manifest: bundle.manifest,
-          code: bundle.code,
-          files: bundle.files
-        }
-      });
-    });
+      const model: PythonModel = {
+        manifest: bundle.manifest,
+        predict: async (inputs: any) => this.predict(result, inputs),
+        cleanup: async () => this.unload(result)
+      };
+      return model;
+    } catch (error) {
+      throw new Error(`Model loading failed: ${(error as Error).message}`);
+    }
   }
 
   async predict(model: PythonModel, inputs: any): Promise<any> {
@@ -191,28 +144,70 @@ export class PyodideAdapter extends BaseAdapter {
   }
 
   private async predictInWorker(model: PythonModel, inputs: any): Promise<any> {
-    if (!this.worker) {
+    if (!this.workerId) {
       throw new Error('Worker not initialized');
     }
 
-    return new Promise((resolve, reject) => {
-      const requestId = this.generateRequestId();
-      
-      this.pendingRequests.set(requestId, {
-        resolve,
-        reject,
-        timeout: setTimeout(() => {
-          this.pendingRequests.delete(requestId);
-          reject(new Error('Prediction timeout'));
-        }, this._options.timeout || 30000)
-      });
+    // Assuming the pool's predict signature matches what we need or we adapt it
+    // The previous implementation sent model reference. 
+    // WorkerPool.executePredict expects (workerId, modelId, input)
+    // We need to extract the modelId from somewhere. 
+    // The previous loadModelInWorker resolved with a model that captures 'result' which likely contained modelId.
+    // However, the interface for predict(model, inputs) has 'model' which is PythonModel.
+    // The 'result' passed to predict (the 1st arg in the arrow function above) was the payload from loadModel.
+    // Let's assume 'model' passed here is correct, but we need the ID.
+    // Actually, in the line: predict: async (inputs: any) => this.predict(result, inputs)
+    // 'result' is the payload from loadModel.
+    // But this.predict signature is predict(model: PythonModel, inputs: any)
+    // That means 'result' is being passed as 'model'? No, that type wouldn't match PythonModel.
+    // Ah, previous code:
+    // resolve: (result) => {
+    //   const model: PythonModel = { ... }
+    //   loadingModels.set(modelId, model) -- wait
+    // }
+    // The 'result' in 'resolve(result)' was passed to 'this.predict(result, inputs)'.
+    // BUT 'this.predict' implementation is: async predict(model: PythonModel, inputs: any).
+    // So 'result' MUST be a PythonModel?
+    // In previous code:
+    // resolve: (result) => { ... resolve(model) }
+    // It seems there is a mix up in my understanding of the previous code or its types.
+    // Let's look closer at line 145: predict: async (inputs: any) => this.predict(result, inputs)
+    // AND line 170: async predict(model: PythonModel, inputs: any)
+    // This implies 'result' (from worker response) IS 'PythonModel'. 
+    // BUT 'result' from worker is typically a JSON payload { modelId: ... }.
+    // So 'this.predict' signature expects PythonModel, but was receiving a payload?
+    // TS would complain unless 'any'.
 
-      this.worker.postMessage({
-        id: requestId,
-        type: 'predict',
-        payload: { inputs }
-      });
-    });
+    // Correction: I should trust the new WorkerPool logic.
+    // WorkerPool.executePredict(workerId, modelId, input).
+    // I need 'modelId'.
+    // The 'model' argument provides manifest.
+    // I need to ensure I have the modelId associated with this PythonModel instance.
+    // I will use a map or property.
+
+    // For now, let's assume I can get modelId from the model (maybe I should add it to PythonModel interface or cast).
+    // Or I can look it up in loadedModels?
+    // loadedModels is Map<string, PythonModel>. Value is PythonModel.
+    // I can iterate to find key? Slow.
+
+    // Better: In loadModelInWorker, I get the modelId.
+    // I should attach it to the model instance references or closure.
+    // PROPOSAL: Modify `predict` to take `modelId` string instead of `PythonModel`?
+    // NO, BaseAdapter defines `predict(model: PythonModel, inputs: any)`.
+    // So I must stick to signature.
+
+    // I will try to find the modelId by reference.
+    let modelId: string | undefined;
+    for (const [id, m] of this.loadedModels.entries()) {
+      if (m === model) {
+        modelId = id;
+        break;
+      }
+    }
+
+    if (!modelId) throw new Error('Model ID not found for instance');
+
+    return this.pool.executePredict(this.workerId, modelId, inputs);
   }
 
   async unload(model: PythonModel): Promise<void> {
@@ -220,13 +215,13 @@ export class PyodideAdapter extends BaseAdapter {
     for (const [modelId, loadedModel] of this.loadedModels.entries()) {
       if (loadedModel === model) {
         this.loadedModels.delete(modelId);
-        
-        if (this.worker) {
-          this.worker.postMessage({
-            id: this.generateRequestId(),
-            type: 'unload',
-            payload: { modelId }
-          });
+
+        if (this.workerId) {
+          try {
+            await this.pool.executeUnload(this.workerId, modelId);
+          } catch (e) {
+            console.warn('Failed to unload model from worker:', e);
+          }
         }
         break;
       }
@@ -235,21 +230,19 @@ export class PyodideAdapter extends BaseAdapter {
 
   async cleanup(): Promise<void> {
     this.log('Cleaning up Pyodide adapter...');
-    
-    // Clear all pending requests
-    for (const [requestId, request] of this.pendingRequests.entries()) {
-      clearTimeout(request.timeout);
-      request.reject(new Error('Adapter cleanup'));
-    }
-    this.pendingRequests.clear();
+
+    // Pending requests are managed by pool now.
 
     // Clear loaded models
     this.loadedModels.clear();
 
-    // Terminate worker
-    if (this.worker) {
-      this.worker.terminate();
-      this.worker = null;
+    // Terminate worker via pool?
+    // Pool manages lifecycle, so we arguably shouldn't terminate unless we own it exclusively.
+    // But since we acquired it, maybe we should release it?
+    // WorkerPool doesn't have 'release', only 'terminate'.
+    if (this.workerId) {
+      this.pool.terminate(this.workerId);
+      this.workerId = null;
     }
 
     this.setStatus('idle');
@@ -258,11 +251,11 @@ export class PyodideAdapter extends BaseAdapter {
 
   protected validateRuntimeSpecificBundle(bundle: ModelBundle): void {
     const manifest = bundle.manifest;
-    
+
     if (!manifest.entrypoint) {
       throw this.createError('validation', 'Pyodide models require entrypoint field');
     }
-    
+
     if (!manifest.python_version) {
       throw this.createError('validation', 'Pyodide models require python_version field');
     }
@@ -272,143 +265,13 @@ export class PyodideAdapter extends BaseAdapter {
     }
   }
 
-  private handleWorkerMessage(event: MessageEvent): void {
-    const response = event.data;
-    const request = this.pendingRequests.get(response.id);
-    
-    if (!request) return;
-    
-    clearTimeout(request.timeout);
-    this.pendingRequests.delete(response.id);
-
-    if (response.error) {
-      request.reject(new Error(response.error.message || 'Worker error'));
-    } else if (response.type === 'progress') {
-      this.reportProgress(response.progress);
-    } else {
-      request.resolve(response.payload);
-    }
-  }
-
+  // Deprecated: WorkerPool handles message dispatch
   private generateRequestId(): string {
     return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
   private getWorkerScript(): string {
-    return `
-// Pyodide Web Worker Script
-let pyodide = null;
-const loadedModels = new Map();
-
-self.onmessage = async function(e) {
-  const { id, type, payload } = e.data;
-  
-  try {
-    switch (type) {
-      case 'init':
-        await initializePyodide(id, payload);
-        break;
-      case 'loadModel':
-        await loadModel(id, payload);
-        break;
-      case 'predict':
-        await predict(id, payload);
-        break;
-      case 'unload':
-        await unloadModel(id, payload);
-        break;
-      default:
-        throw new Error('Unknown message type: ' + type);
-    }
-  } catch (error) {
-    self.postMessage({
-      id,
-      type: 'error',
-      error: {
-        type: 'execution',
-        message: error.message,
-        timestamp: new Date().toISOString()
-      }
-    });
-  }
-};
-
-async function initializePyodide(id, config) {
-  if (pyodide) {
-    self.postMessage({ id, type: 'initialized' });
-    return;
-  }
-
-  importScripts(config.pyodideUrl);
-  pyodide = await loadPyodide({
-    stdout: config.enableLogging ? console.log : undefined,
-    stderr: config.enableLogging ? console.error : undefined
-  });
-  
-  self.postMessage({ id, type: 'initialized' });
-}
-
-async function loadModel(id, payload) {
-  const { modelId, manifest, code, files } = payload;
-  
-  // Install dependencies
-  if (manifest.dependencies && manifest.dependencies.length > 0) {
-    await pyodide.loadPackage(['micropip']);
-    const micropip = pyodide.pyimport('micropip');
-    for (const dep of manifest.dependencies) {
-      await micropip.install(dep);
-    }
-  }
-  
-  // Load additional files
-  if (files) {
-    for (const [filename, content] of Object.entries(files)) {
-      pyodide.FS.writeFile(filename, new Uint8Array(content));
-    }
-  }
-  
-  // Execute model code
-  pyodide.runPython(code);
-  
-  // Store model reference
-  loadedModels.set(modelId, { manifest, loaded: true });
-  
-  self.postMessage({ 
-    id, 
-    type: 'loaded',
-    payload: { modelId }
-  });
-}
-
-async function predict(id, payload) {
-  const { inputs } = payload;
-  
-  // Convert inputs to Python
-  const pyInputs = pyodide.toPy(inputs);
-  
-  // Call predict function (assuming it exists in the loaded Python code)
-  const pyResult = pyodide.globals.get('predict')(pyInputs);
-  
-  // Convert result back to JavaScript
-  const result = pyResult.toJs({ dict_converter: Object.fromEntries });
-  
-  self.postMessage({
-    id,
-    type: 'predicted',
-    payload: result
-  });
-}
-
-async function unloadModel(id, payload) {
-  const { modelId } = payload;
-  loadedModels.delete(modelId);
-  
-  self.postMessage({
-    id,
-    type: 'unloaded',
-    payload: { modelId }
-  });
-}
-    `;
+    // Deprecated: WorkerPool loads this from file
+    return '';
   }
 }

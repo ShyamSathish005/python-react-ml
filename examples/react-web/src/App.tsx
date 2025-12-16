@@ -18,7 +18,7 @@ function ModelDemo() {
 
   const handlePredict = async () => {
     if (!model) return;
-    
+
     setIsRunning(true);
     try {
       const result = await predict(inputValues);
@@ -32,7 +32,7 @@ function ModelDemo() {
 
   const handleGetInfo = async () => {
     if (!model) return;
-    
+
     try {
       const info = await model.getInfo?.();
       setModelInfo(info);
@@ -54,7 +54,7 @@ function ModelDemo() {
     <div className="model-demo">
       <div className="status-section">
         <div className="status-indicator">
-          <div 
+          <div
             className="status-dot"
             style={{ backgroundColor: getStatusColor(status) }}
           />
@@ -62,7 +62,7 @@ function ModelDemo() {
         </div>
         {error && (
           <div className="error-message">
-            Error: {error}
+            Error: {typeof error === 'string' ? error : (error as any).message || JSON.stringify(error)}
           </div>
         )}
       </div>
@@ -92,7 +92,7 @@ function ModelDemo() {
                 </div>
               ))}
             </div>
-            <button 
+            <button
               onClick={handlePredict}
               disabled={isRunning}
               className="predict-button"
@@ -139,7 +139,7 @@ function ModelDemo() {
 // Main App component with provider
 function App() {
   return (
-    <PythonModelProvider 
+    <PythonModelProvider
       pyodideUrl="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"
       enableLogging={true}
     >
@@ -151,14 +151,14 @@ function App() {
             The model is a simple regression model that takes 3 features and outputs a probability.
           </p>
         </header>
-        
+
         <main className="app-main">
           <ModelDemo />
         </main>
 
         <footer className="app-footer">
           <p>
-            Built with Python React ML • 
+            Built with Python React ML •
             <a href="https://github.com/yourusername/python-react-ml" target="_blank" rel="noopener noreferrer">
               View on GitHub
             </a>

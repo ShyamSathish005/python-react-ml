@@ -1,18 +1,18 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { PythonReactML } from '@python-react-ml/core';
+import { PythonReactML } from 'python-react-ml';
 import type { ModelContextValue, ModelProviderProps } from '../types';
 
 const ModelContext = createContext<ModelContextValue | undefined>(undefined);
 
-export function PythonModelProvider({ 
-  children, 
-  pyodideUrl, 
-  enableLogging = false 
+export function PythonModelProvider({
+  children,
+  pyodideUrl,
+  enableLogging = false
 }: ModelProviderProps) {
-  const [engine] = useState(() => new PythonReactML({ 
-    platform: 'web', 
+  const [engine] = useState(() => new PythonReactML({
+    platform: 'web',
     pyodideUrl,
-    enableLogging 
+    enableLogging
   }));
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);

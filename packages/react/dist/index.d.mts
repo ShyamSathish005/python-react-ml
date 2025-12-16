@@ -1,4 +1,4 @@
-import { ModelError, RuntimeError, ModelProgress, UseModelResult, PythonReactML, PythonModel } from 'python-react-ml';
+import { ModelError, RuntimeError, ModelProgress, RuntimeType, UseModelResult, PythonReactML, PythonModel } from 'python-react-ml';
 export { ModelBundle, ModelError, ModelProgress, ModelStatus, PythonModel, PythonModelManifest, RuntimeError, RuntimeStatus } from 'python-react-ml';
 import * as react_jsx_runtime from 'react/jsx-runtime';
 import React, { ReactNode, Component, ErrorInfo } from 'react';
@@ -16,10 +16,18 @@ interface UseModelOptions {
     onProgress?: (progress: ModelProgress) => void;
     /** Python engine platform */
     platform?: 'web' | 'native';
+    /** Runtime to use for model execution */
+    runtime?: RuntimeType;
     /** Pyodide URL for web platform */
     pyodideUrl?: string;
     /** Enable logging */
     enableLogging?: boolean;
+    /** GPU acceleration (ONNX/TFJS) */
+    gpuAcceleration?: boolean;
+    /** ONNX-specific options */
+    onnxOptions?: any;
+    /** TensorFlow.js backend */
+    tfjsBackend?: string;
     /** Memory limit */
     memoryLimit?: number;
     /** Operation timeout */

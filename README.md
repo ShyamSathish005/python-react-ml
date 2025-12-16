@@ -1,12 +1,14 @@
 # Python React ML
 
-> Run Python ML models directly in React and React Native apps - no backend required!
+> **Production-Grade Edge AI Infrastructure**. Run Python ML models in React with resilient worker orchestration, smart caching, and web-native performance.
 
 [![npm version](https://badge.fury.io/js/@python-react-ml%2Fcore.svg)](https://badge.fury.io/js/@python-react-ml%2Fcore)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 ## 🚀 Features
 
+- **Resilient Worker Orchestration**: Auto-healing workers that restart on crash (OOM) and retry failed inferences.
+- **Smart Caching Layer**: Zero-latency model loading via IndexedDB with ETag/Hash validation.
 - **Multi-Runtime Support**: Choose between Pyodide (Python), ONNX Runtime, or TensorFlow.js
 - **Python in the Browser**: Run real Python code client-side using Pyodide WebAssembly
 - **ONNX Models**: High-performance inference with ONNX Runtime Web
@@ -14,9 +16,7 @@
 - **React Integration**: Seamless hooks and components for React apps
 - **React Native Support**: Native bridge for mobile applications
 - **Offline-First**: No internet required after initial model load
-- **Easy Bundling**: CLI tools for model packaging and deployment
 - **TypeScript**: Full TypeScript support for better DX
-- **Web Workers**: Non-blocking Python execution
 
 ## 📋 Table of Contents
 
@@ -600,14 +600,20 @@ npm run publish:all
 - **File Size**: Bundles can be large due to Python runtime
 - **Performance**: Slightly slower than native Python (but often faster than server round-trips)
 - **React Native**: Requires native bridge implementation (iOS/Android)
-We will see how can we optimize it in the long run 
+- **Web**: Limited to Pyodide-compatible packages (most popular ML libraries supported)
+- **File Size**: 20MB (Pyodide) or ~5MB (ONNX) - *Mitigated by Smart Caching*
+- **Performance**: Near-native for ONNX, ~2x slower for Python (but no network latency)
+ 
 
 ## 🗺️ Roadmap
 
 - [x] **Multi-Runtime Support**: Pyodide, ONNX Runtime, and TensorFlow.js ✅
 - [x] **ONNX Runtime Integration**: High-performance inference with WebAssembly ✅  
 - [x] **TensorFlow.js Integration**: Native TF.js support with GPU acceleration ✅
-- [ ] Model caching and lazy loading
+- [x] **Smart Caching**: IndexedDB Layer & ETag Validation ✅
+- [x] **Resilient Workers**: Auto-restart & Retry Mechanism ✅
+- [ ] WebGPU Backend for LLMs (Phase 2)
+- [ ] Hybrid Cloud/Edge Resolver (Phase 2)
 - [ ] Performance optimizations and benchmarks
 - [ ] Advanced model bundling and compression
 - [ ] More ML framework examples (PyTorch, Hugging Face)

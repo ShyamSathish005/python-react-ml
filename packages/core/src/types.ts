@@ -18,23 +18,23 @@ export interface PythonModelManifest {
   description?: string;
   author?: string;
   license?: string;
-  
+
   // Runtime specification
   runtime: RuntimeType;
-  
+
   // Python configuration (for pyodide runtime)
   entrypoint?: string;
   python_version?: string;
   dependencies?: string[];
-  
+
   // Model file (for onnx/tfjs runtime)
   model_file?: string;
-  
+
   // Bundle integrity
   bundle_version: string;
   sha256: string;
   created_at: string;
-  
+
   // Runtime configuration
   runtime_hints: {
     pyodide?: boolean;
@@ -44,11 +44,11 @@ export interface PythonModelManifest {
     gpu_acceleration?: boolean;
     quantized?: boolean;
   };
-  
+
   // Model I/O specification
   inputs: ModelIOSchema[];
   outputs: ModelIOSchema[];
-  
+
   // Legacy API specification (for backward compatibility)
   functions?: {
     [key: string]: {
@@ -57,7 +57,7 @@ export interface PythonModelManifest {
       outputs: { [key: string]: string };
     };
   };
-  
+
   // File manifest
   files: {
     [path: string]: {
@@ -73,6 +73,7 @@ export interface PythonModel {
   predict: (input: any) => Promise<any>;
   getInfo?: () => Promise<any>;
   cleanup?: () => void;
+  backend?: string;
 }
 
 export interface ModelBundle {
@@ -93,9 +94,10 @@ export interface PythonEngineOptions {
   onStatusChange?: (status: RuntimeStatus) => void;
   onProgress?: (progress: number) => void;
   onError?: (error: RuntimeError) => void;
+  fallbackUrl?: string;
 }
 
-export type RuntimeStatus = 
+export type RuntimeStatus =
   | 'idle'
   | 'initializing'
   | 'ready'
@@ -113,9 +115,9 @@ export interface RuntimeError {
   pythonTraceback?: string;
 }
 
-export type ModelStatus = 
+export type ModelStatus =
   | 'idle'
-  | 'downloading' 
+  | 'downloading'
   | 'validating'
   | 'loading'
   | 'ready'
@@ -181,18 +183,18 @@ export interface WorkerResponse {
 export interface IAdapter {
   readonly runtime: RuntimeType;
   readonly status: RuntimeStatus;
-  
+
   // Core lifecycle methods
   initialize(options?: AdapterOptions): Promise<void>;
   load(bundle: ModelBundle): Promise<PythonModel>;
   predict(model: PythonModel, inputs: any): Promise<any>;
   unload(model: PythonModel): Promise<void>;
   cleanup(): Promise<void>;
-  
+
   // Status and error handling
   getStatus(): RuntimeStatus;
   getLastError(): RuntimeError | null;
-  
+
   // Event handlers
   onStatusChange?(status: RuntimeStatus): void;
   onProgress?(progress: ModelProgress): void;

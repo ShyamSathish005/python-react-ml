@@ -12,7 +12,7 @@ import { RuntimeType, AdapterOptions, ModelBundle, PythonModelManifest } from '.
 beforeAll(() => {
   // @ts-ignore
   const g = global;
-  
+
   Object.defineProperty(global, 'WebAssembly', {
     value: {
       instantiate: jest.fn(),
@@ -31,7 +31,7 @@ beforeAll(() => {
   });
 
   // Mock ONNX Runtime
-  g.ort = {
+  (global as any).ort = {
     InferenceSession: {
       create: jest.fn().mockResolvedValue({
         run: jest.fn().mockResolvedValue({
@@ -54,7 +54,7 @@ beforeAll(() => {
   };
 
   // Mock TensorFlow.js
-  g.tf = {
+  (global as any).tf = {
     loadLayersModel: jest.fn().mockResolvedValue({
       predict: jest.fn().mockReturnValue({
         arraySync: () => [0.8, 0.2],
@@ -106,7 +106,7 @@ const mockBundle: ModelBundle = {
       description: 'Test input'
     }],
     outputs: [{
-      name: 'output', 
+      name: 'output',
       type: 'array',
       shape: [1],
       dtype: 'float32',
@@ -165,7 +165,7 @@ describe('PyodideAdapter', () => {
 
   it('should initialize successfully', async () => {
     jest.spyOn(adapter as any, 'initializeWebWorker').mockResolvedValue(undefined);
-    
+
     await adapter.initialize();
     expect(adapter.getStatus()).toBe('idle');
   });
@@ -173,32 +173,32 @@ describe('PyodideAdapter', () => {
   it('should validate bundle correctly through load', async () => {
     const validBundle = { ...mockBundle };
     validBundle.manifest.runtime = 'pyodide';
-    
+
     // Mock initialization
     jest.spyOn(adapter as any, 'initializeWebWorker').mockResolvedValue(undefined);
     await adapter.initialize();
-    
+
     // Mock load functionality
     jest.spyOn(adapter as any, 'loadModelInWorker').mockResolvedValue({
       manifest: validBundle.manifest,
       predict: jest.fn(),
       cleanup: jest.fn()
     });
-    
+
     await expect(adapter.load(validBundle)).resolves.toBeDefined();
   });
 
   it('should reject bundle without entrypoint', async () => {
     const invalidBundle = { ...mockBundle };
     delete invalidBundle.manifest.entrypoint;
-    
+
     await expect(adapter.load(invalidBundle)).rejects.toThrow('Pyodide models require entrypoint field');
   });
 
   it('should reject bundle without python_version', async () => {
     const invalidBundle = { ...mockBundle };
     delete invalidBundle.manifest.python_version;
-    
+
     await expect(adapter.load(invalidBundle)).rejects.toThrow('Pyodide models require python_version field');
   });
 });
@@ -217,25 +217,21 @@ describe('ONNXAdapter', () => {
   });
 
   it('should handle missing ONNX Runtime', async () => {
-    const originalOrt = @ts-ignore
-    global.ort;
-    delete @ts-ignore
-    global.ort;
-    
+    const originalOrt = (global as any).ort;
+    delete (global as any).ort;
+
     await expect(adapter.initialize()).rejects.toThrow('ONNX Runtime not found');
-    
-    @ts-ignore
-    global.ort = originalOrt;
+
+    (global as any).ort = originalOrt;
   });
 
   it('should validate ONNX bundle correctly through load', async () => {
     const validBundle = { ...mockBundle };
     validBundle.manifest.runtime = 'onnx';
     validBundle.files = { 'model.onnx': new ArrayBuffer(100) };
-    
+
     // Mock ONNX Runtime
-    @ts-ignore
-    global.ort = {
+    (global as any).ort = {
       InferenceSession: {
         create: jest.fn().mockResolvedValue({
           run: jest.fn().mockResolvedValue({}),
@@ -244,7 +240,7 @@ describe('ONNXAdapter', () => {
         })
       }
     };
-    
+
     await expect(adapter.load(validBundle)).resolves.toBeDefined();
   });
 
@@ -252,7 +248,7 @@ describe('ONNXAdapter', () => {
     const invalidBundle = { ...mockBundle };
     invalidBundle.manifest.runtime = 'onnx';
     delete invalidBundle.files;
-    
+
     await expect(adapter.load(invalidBundle)).rejects.toThrow('ONNX models require model_file field or model file in bundle.files');
   });
 });
@@ -267,35 +263,30 @@ describe('TFJSAdapter', () => {
 
   it('should initialize successfully when TensorFlow.js is available', async () => {
     await adapter.initialize();
-    
-    expect(@ts-ignore
-    global.tf.ready).toHaveBeenCalled();
+
+    expect((global as any).tf.ready).toHaveBeenCalled();
   });
 
   it('should handle missing TensorFlow.js', async () => {
-    const originalTf = @ts-ignore
-    global.tf;
-    delete @ts-ignore
-    global.tf;
-    
+    const originalTf = (global as any).tf;
+    delete (global as any).tf;
+
     await expect(adapter.initialize()).rejects.toThrow('TensorFlow.js not found');
-    
-    @ts-ignore
-    global.tf = originalTf;
+
+    (global as any).tf = originalTf;
   });
 
   it('should validate TFJS bundle correctly through load', async () => {
     const validBundle = { ...mockBundle };
     validBundle.manifest.runtime = 'tfjs';
     validBundle.files = { 'model.json': new ArrayBuffer(100) };
-    
+
     // Mock loadLayersModel
-    @ts-ignore
-    global.tf.loadLayersModel = jest.fn().mockResolvedValue({
+    (global as any).tf.loadLayersModel = jest.fn().mockResolvedValue({
       predict: jest.fn().mockReturnValue({}),
       dispose: jest.fn()
     });
-    
+
     await expect(adapter.load(validBundle)).resolves.toBeDefined();
   });
 
@@ -303,10 +294,9 @@ describe('TFJSAdapter', () => {
     const options: AdapterOptions = {
       tfjsBackend: 'cpu'
     };
-    
+
     await adapter.initialize(options);
-    expect(@ts-ignore
-    global.tf.setBackend).toHaveBeenCalledWith('cpu');
+    expect((global as any).tf.setBackend).toHaveBeenCalledWith('cpu');
   });
 });
 
@@ -344,23 +334,22 @@ describe('Error Handling', () => {
     const adapter = new PyodideAdapter();
     const invalidBundle = { ...mockBundle };
     delete invalidBundle.manifest.entrypoint;
-    
+
     await expect(adapter.load(invalidBundle)).rejects.toThrow('Pyodide models require entrypoint field');
   });
 
   it('should handle initialization errors', async () => {
     const adapter = new ONNXAdapter();
-    
+
     // Mock ONNX Runtime failure
-    @ts-ignore
-    global.ort = undefined;
-    
+    (global as any).ort = undefined;
+
     await expect(adapter.initialize()).rejects.toThrow();
   });
 
   it('should handle runtime errors during execution', async () => {
     const adapter = new PyodideAdapter();
-    
+
     // Try to predict without initialization
     const mockInputs = { x: [1, 2, 3, 4] };
     const mockModel = {
@@ -368,7 +357,7 @@ describe('Error Handling', () => {
       predict: jest.fn(),
       cleanup: jest.fn()
     };
-    
+
     await expect(adapter.predict(mockModel, mockInputs)).rejects.toThrow('Adapter not initialized');
   });
 });

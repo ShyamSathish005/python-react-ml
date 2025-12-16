@@ -313,7 +313,7 @@ var require_BufferList = __commonJS({
         this.head = this.tail = null;
         this.length = 0;
       };
-      BufferList.prototype.join = function join3(s) {
+      BufferList.prototype.join = function join4(s) {
         if (this.length === 0)
           return "";
         var p = this.head;
@@ -2426,8 +2426,8 @@ var require_lib2 = __commonJS({
         return this;
       }
       var p = this.constructor;
-      return this.then(resolve2, reject2);
-      function resolve2(value) {
+      return this.then(resolve3, reject2);
+      function resolve3(value) {
         function yes() {
           return value;
         }
@@ -2580,8 +2580,8 @@ var require_lib2 = __commonJS({
       }
       return out;
     }
-    Promise2.resolve = resolve;
-    function resolve(value) {
+    Promise2.resolve = resolve2;
+    function resolve2(value) {
       if (value instanceof this) {
         return value;
       }
@@ -3038,8 +3038,8 @@ var require_utils = __commonJS({
       var result = transform[inputType][outputType](input);
       return result;
     };
-    exports.resolve = function(path4) {
-      var parts = path4.split("/");
+    exports.resolve = function(path5) {
+      var parts = path5.split("/");
       var result = [];
       for (var index = 0; index < parts.length; index++) {
         var part = parts[index];
@@ -3112,10 +3112,10 @@ var require_utils = __commonJS({
       var promise = external.Promise.resolve(inputData).then(function(data) {
         var isBlob = support.blob && (data instanceof Blob || ["[object File]", "[object Blob]"].indexOf(Object.prototype.toString.call(data)) !== -1);
         if (isBlob && typeof FileReader !== "undefined") {
-          return new external.Promise(function(resolve, reject) {
+          return new external.Promise(function(resolve2, reject) {
             var reader = new FileReader();
             reader.onload = function(e) {
-              resolve(e.target.result);
+              resolve2(e.target.result);
             };
             reader.onerror = function(e) {
               reject(e.target.error);
@@ -3670,7 +3670,7 @@ var require_StreamHelper = __commonJS({
       }
     }
     function accumulate(helper, updateCallback) {
-      return new external.Promise(function(resolve, reject) {
+      return new external.Promise(function(resolve2, reject) {
         var dataArray = [];
         var chunkType = helper._internalType, resultType = helper._outputType, mimeType = helper._mimeType;
         helper.on("data", function(data, meta) {
@@ -3684,7 +3684,7 @@ var require_StreamHelper = __commonJS({
         }).on("end", function() {
           try {
             var result = transformZipOutput(resultType, concat(chunkType, dataArray), mimeType);
-            resolve(result);
+            resolve2(result);
           } catch (e) {
             reject(e);
           }
@@ -8871,18 +8871,18 @@ var require_object = __commonJS({
       var object = new ZipObject(name, zipObjectContent, o);
       this.files[name] = object;
     };
-    var parentFolder = function(path4) {
-      if (path4.slice(-1) === "/") {
-        path4 = path4.substring(0, path4.length - 1);
+    var parentFolder = function(path5) {
+      if (path5.slice(-1) === "/") {
+        path5 = path5.substring(0, path5.length - 1);
       }
-      var lastSlash = path4.lastIndexOf("/");
-      return lastSlash > 0 ? path4.substring(0, lastSlash) : "";
+      var lastSlash = path5.lastIndexOf("/");
+      return lastSlash > 0 ? path5.substring(0, lastSlash) : "";
     };
-    var forceTrailingSlash = function(path4) {
-      if (path4.slice(-1) !== "/") {
-        path4 += "/";
+    var forceTrailingSlash = function(path5) {
+      if (path5.slice(-1) !== "/") {
+        path5 += "/";
       }
-      return path4;
+      return path5;
     };
     var folderAdd = function(name, createFolders) {
       createFolders = typeof createFolders !== "undefined" ? createFolders : defaults.createFolders;
@@ -9776,7 +9776,7 @@ var require_load = __commonJS({
     var Crc32Probe = require_Crc32Probe();
     var nodejsUtils = require_nodejsUtils();
     function checkEntryCRC32(zipEntry) {
-      return new external.Promise(function(resolve, reject) {
+      return new external.Promise(function(resolve2, reject) {
         var worker = zipEntry.decompressed.getContentWorker().pipe(new Crc32Probe());
         worker.on("error", function(e) {
           reject(e);
@@ -9784,7 +9784,7 @@ var require_load = __commonJS({
           if (worker.streamInfo.crc32 !== zipEntry.decompressed.crc32) {
             reject(new Error("Corrupted zip : CRC32 mismatch"));
           } else {
-            resolve();
+            resolve2();
           }
         }).resume();
       });
@@ -9883,7 +9883,7 @@ var require_lib3 = __commonJS({
 
 // src/cli.ts
 var import_commander = require("commander");
-var import_chalk = __toESM(require("chalk"));
+var import_chalk2 = __toESM(require("chalk"));
 
 // src/commands/bundle.ts
 var fs2 = __toESM(require("fs"));
@@ -9929,6 +9929,11 @@ var ManifestGenerator = class {
       description: options.description || `Python ML model: ${options.name}`,
       author: options.author,
       license: "MIT",
+      // Default to pyodide for CLI bundles
+      runtime: "pyodide",
+      inputs: [],
+      // To be populated by analysis
+      outputs: [],
       entrypoint: path.basename(options.entry),
       python_version: options.pythonVersion || "3.11",
       dependencies: options.dependencies || [],
@@ -10014,12 +10019,12 @@ async function bundleModel(entry, options) {
   console.log("\u2705 Manifest generated and validated");
   const output = fs2.createWriteStream(outputPath);
   const archive = (0, import_archiver.default)("zip", { zlib: { level: 9 } });
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve2, reject) => {
     output.on("close", () => {
       console.log(`\u2705 Bundle created: ${outputPath} (${archive.pointer()} bytes)`);
       console.log(`\u{1F4CB} Manifest: ${manifest.name} v${manifest.version}`);
       console.log(`\u{1F512} SHA256: ${manifest.sha256}`);
-      resolve();
+      resolve2();
     });
     archive.on("error", reject);
     archive.pipe(output);
@@ -10332,33 +10337,122 @@ Next steps:`);
   }
 }
 
+// src/commands/optimize.ts
+var fs5 = __toESM(require("fs"));
+var path4 = __toESM(require("path"));
+var import_child_process = require("child_process");
+var import_ora3 = __toESM(require("ora"));
+var import_chalk = __toESM(require("chalk"));
+async function optimizeModel(input, options) {
+  const inputPath = path4.resolve(input);
+  if (!fs5.existsSync(inputPath)) {
+    throw new Error(`Input file not found: ${inputPath}`);
+  }
+  if (!inputPath.endsWith(".onnx")) {
+    throw new Error("Only .onnx models are supported for optimization");
+  }
+  const outputPath = options.output ? path4.resolve(options.output) : inputPath.replace(".onnx", ".quant.onnx");
+  const quantType = options.type === "int8" ? "QInt8" : "QUInt8";
+  const spinner = (0, import_ora3.default)("Optimizing model...").start();
+  const scriptContent = `
+import onnx
+from onnxruntime.quantization import quantize_dynamic, QuantType
+
+input_model_path = "${inputPath.replace(/\\/g, "\\\\")}"
+output_model_path = "${outputPath.replace(/\\/g, "\\\\")}"
+
+print(f"Quantizing {input_model_path} to {output_model_path}...")
+
+try:
+    quantize_dynamic(
+        input_model_path,
+        output_model_path,
+        weight_type=QuantType.${quantType}
+    )
+    print("Quantization complete")
+except Exception as e:
+    print(f"Error: {e}")
+    exit(1)
+`;
+  const scriptPath = path4.join(path4.dirname(inputPath), "_quantize_tmp.py");
+  fs5.writeFileSync(scriptPath, scriptContent);
+  try {
+    await runPythonScript(scriptPath);
+    spinner.succeed(`Model optimized: ${path4.basename(outputPath)}`);
+    const originalSize = fs5.statSync(inputPath).size;
+    const newSize = fs5.statSync(outputPath).size;
+    const reduction = ((originalSize - newSize) / originalSize * 100).toFixed(1);
+    console.log(import_chalk.default.blue(`Size reduced by ${reduction}% (${formatBytes(originalSize)} -> ${formatBytes(newSize)})`));
+  } catch (error) {
+    spinner.fail("Optimization failed");
+    throw error;
+  } finally {
+    if (fs5.existsSync(scriptPath)) {
+      fs5.unlinkSync(scriptPath);
+    }
+  }
+}
+function runPythonScript(scriptPath) {
+  return new Promise((resolve2, reject) => {
+    const pythonProcess = (0, import_child_process.spawn)("python", [scriptPath]);
+    pythonProcess.stdout.on("data", (data) => {
+    });
+    pythonProcess.stderr.on("data", (data) => {
+    });
+    pythonProcess.on("close", (code) => {
+      if (code === 0) {
+        resolve2();
+      } else {
+        reject(new Error(`Python process exited with code ${code}. Ensure 'onnx' and 'onnxruntime' are installed.`));
+      }
+    });
+  });
+}
+function formatBytes(bytes, decimals = 2) {
+  if (bytes === 0)
+    return "0 Bytes";
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ["Bytes", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
+}
+
 // src/cli.ts
 var program = new import_commander.Command();
 program.name("python-react-ml").description("CLI tools for Python React ML framework").version("1.0.0");
 program.command("bundle").description("Bundle a Python model for use in React/React Native").argument("<entry>", "Path to the main Python file").option("-o, --output <path>", "Output bundle path", "model.bundle.zip").option("-n, --name <name>", "Model name").option("-v, --version <version>", "Model version", "1.0.0").option("--include <files...>", "Additional files to include").option("--deps <packages...>", "Python dependencies").action(async (entry, options) => {
   try {
     await bundleModel(entry, options);
-    console.log(import_chalk.default.green("\u2713 Model bundled successfully"));
+    console.log(import_chalk2.default.green("\u2713 Model bundled successfully"));
   } catch (error) {
-    console.error(import_chalk.default.red("\u2717 Bundle failed:"), error.message);
+    console.error(import_chalk2.default.red("\u2717 Bundle failed:"), error.message);
     process.exit(1);
   }
 });
 program.command("validate").description("Validate a Python model for compatibility").argument("<entry>", "Path to the Python file to validate").action(async (entry) => {
   try {
     await validateModel(entry);
-    console.log(import_chalk.default.green("\u2713 Model validation passed"));
+    console.log(import_chalk2.default.green("\u2713 Model validation passed"));
   } catch (error) {
-    console.error(import_chalk.default.red("\u2717 Validation failed:"), error.message);
+    console.error(import_chalk2.default.red("\u2717 Validation failed:"), error.message);
     process.exit(1);
   }
 });
 program.command("init").description("Initialize a new Python React ML project").argument("[name]", "Project name").option("-t, --template <template>", "Project template", "basic").action(async (name, options) => {
   try {
     await initProject(name, options);
-    console.log(import_chalk.default.green("\u2713 Project initialized successfully"));
+    console.log(import_chalk2.default.green("\u2713 Project initialized successfully"));
   } catch (error) {
-    console.error(import_chalk.default.red("\u2717 Initialization failed:"), error.message);
+    console.error(import_chalk2.default.red("\u2717 Initialization failed:"), error.message);
+    process.exit(1);
+  }
+});
+program.command("optimize").description("Quantize ONNX model to reduce size (requires Python + onnxruntime)").argument("<input>", "Path to input .onnx file").option("-o, --output <path>", "Output path").option("-t, --type <type>", "Quantization type (int8/uint8)", "uint8").action(async (input, options) => {
+  try {
+    await optimizeModel(input, options);
+  } catch (error) {
+    console.error(import_chalk2.default.red("\u2717 Optimization failed:"), error.message);
     process.exit(1);
   }
 });

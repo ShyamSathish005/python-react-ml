@@ -1,7 +1,7 @@
 import { BaseAdapter } from './base';
-import { 
-  ModelBundle, 
-  PythonModel, 
+import {
+  ModelBundle,
+  PythonModel,
   AdapterOptions,
   RuntimeError,
   PythonModelManifest
@@ -64,7 +64,7 @@ export class ONNXAdapter extends BaseAdapter {
 
   async initialize(options: AdapterOptions = {}): Promise<void> {
     if (this._status === 'ready') return;
-    
+
     this.setStatus('initializing');
     this.log('Initializing ONNX adapter...');
 
@@ -76,7 +76,7 @@ export class ONNXAdapter extends BaseAdapter {
 
       // Merge options
       const mergedOptions = { ...this._options, ...options };
-      
+
       // Configure ONNX Runtime environment
       if (mergedOptions.onnxOptions) {
         const onnxOpts = mergedOptions.onnxOptions;
@@ -112,10 +112,11 @@ export class ONNXAdapter extends BaseAdapter {
     try {
       // Extract ONNX model file from bundle
       const modelFile = this.extractModelFile(bundle);
-      
+
       // Create inference session
+      const providers = await this.getExecutionProviders();
       this.session = await ort.InferenceSession.create(modelFile, {
-        executionProviders: this.getExecutionProviders(),
+        executionProviders: providers,
         logSeverityLevel: this._options.enableLogging ? 0 : 2,
         logVerbosityLevel: this._options.enableLogging ? 0 : 1
       });
@@ -127,12 +128,13 @@ export class ONNXAdapter extends BaseAdapter {
       const model: PythonModel = {
         manifest: bundle.manifest,
         predict: async (inputs: any) => this.predict(inputs),
-        cleanup: async () => this.unload()
+        cleanup: async () => this.unload(),
+        backend: providers[0] // Approximation of active backend
       };
 
       this.model = model;
       this.setStatus('ready');
-      
+
       return model;
     } catch (error) {
       const runtimeError = this.createError(
@@ -156,13 +158,13 @@ export class ONNXAdapter extends BaseAdapter {
     try {
       // Convert inputs to ONNX tensors
       const feeds = this.convertInputsToTensors(inputs, this.model.manifest);
-      
+
       // Run inference
       const results = await this.session.run(feeds);
-      
+
       // Convert outputs back to JavaScript objects
       const outputs = this.convertTensorsToOutputs(results, this.model.manifest);
-      
+
       this.setStatus('ready');
       return this.transformOutputs(outputs, this.model.manifest);
     } catch (error) {
@@ -188,19 +190,19 @@ export class ONNXAdapter extends BaseAdapter {
 
   async cleanup(): Promise<void> {
     this.log('Cleaning up ONNX adapter...');
-    
+
     await this.unload();
-    
+
     this.setStatus('idle');
     this.log('ONNX adapter cleanup complete');
   }
 
   protected validateRuntimeSpecificBundle(bundle: ModelBundle): void {
     const manifest = bundle.manifest;
-    
+
     if (!manifest.model_file && !bundle.files) {
       throw this.createError(
-        'validation', 
+        'validation',
         'ONNX models require model_file field or model file in bundle.files'
       );
     }
@@ -215,16 +217,16 @@ export class ONNXAdapter extends BaseAdapter {
 
   private extractModelFile(bundle: ModelBundle): Uint8Array {
     const manifest = bundle.manifest;
-    
+
     // Try to find model file in bundle.files first
     if (bundle.files) {
       const modelFileName = manifest.model_file || 'model.onnx';
       const modelFile = bundle.files[modelFileName];
-      
+
       if (modelFile) {
         return new Uint8Array(modelFile);
       }
-      
+
       // Look for any .onnx file
       for (const [filename, content] of Object.entries(bundle.files)) {
         if (filename.endsWith('.onnx')) {
@@ -232,13 +234,13 @@ export class ONNXAdapter extends BaseAdapter {
         }
       }
     }
-    
+
     throw this.createError('loading', 'No ONNX model file found in bundle');
   }
 
   private extractModelMetadata(): void {
     if (!this.session) return;
-    
+
     // Note: ONNX Runtime Web session metadata is typically accessed differently
     // For now, we'll rely on the manifest for input/output names
     this.log('Model metadata extracted from session');
@@ -246,7 +248,7 @@ export class ONNXAdapter extends BaseAdapter {
 
   private convertInputsToTensors(inputs: any, manifest: PythonModelManifest): Record<string, Tensor> {
     const feeds: Record<string, Tensor> = {};
-    
+
     if (!manifest.inputs) {
       throw this.createError('execution', 'Model manifest missing input schema');
     }
@@ -256,11 +258,11 @@ export class ONNXAdapter extends BaseAdapter {
       if (value === undefined) {
         throw this.createError('execution', `Missing required input: ${inputName}`);
       }
-      
+
       const tensor = this.createTensor(value, schema);
       feeds[inputName] = tensor;
     }
-    
+
     return feeds;
   }
 
@@ -268,7 +270,7 @@ export class ONNXAdapter extends BaseAdapter {
     // Flatten array data if needed
     let flatData: number[];
     let dims: number[];
-    
+
     if (Array.isArray(data)) {
       flatData = this.flattenArray(data);
       dims = this.getArrayDimensions(data);
@@ -278,11 +280,11 @@ export class ONNXAdapter extends BaseAdapter {
     } else {
       throw this.createError('execution', `Unsupported input data type: ${typeof data}`);
     }
-    
+
     // Convert to appropriate typed array based on schema
     let typedData: Float32Array | Int32Array;
     let tensorType: string;
-    
+
     switch (schema.dtype) {
       case 'float32':
         typedData = new Float32Array(flatData);
@@ -297,24 +299,24 @@ export class ONNXAdapter extends BaseAdapter {
         typedData = new Float32Array(flatData);
         tensorType = 'float32';
     }
-    
+
     return new ort.Tensor(tensorType, typedData, dims);
   }
 
   private convertTensorsToOutputs(results: Record<string, Tensor>, manifest: PythonModelManifest): any {
     const outputs: any = {};
-    
+
     for (const [outputName, tensor] of Object.entries(results)) {
       outputs[outputName] = this.tensorToArray(tensor);
     }
-    
+
     return outputs;
   }
 
   private tensorToArray(tensor: Tensor): any {
     // Handle different tensor data types
     let data: number[];
-    
+
     if (tensor.data instanceof BigInt64Array) {
       // Convert BigInt64Array to regular numbers
       data = Array.from(tensor.data).map(x => Number(x));
@@ -322,19 +324,19 @@ export class ONNXAdapter extends BaseAdapter {
       // Handle Float32Array, Int32Array, Uint8Array
       data = Array.from(tensor.data as Float32Array | Int32Array | Uint8Array);
     }
-    
+
     const dims = tensor.dims;
-    
+
     if (dims.length === 1) {
       return data;
     }
-    
+
     return this.reshapeArray(data, dims);
   }
 
   private flattenArray(arr: any[]): number[] {
     const result: number[] = [];
-    
+
     const flatten = (item: any) => {
       if (Array.isArray(item)) {
         item.forEach(flatten);
@@ -342,7 +344,7 @@ export class ONNXAdapter extends BaseAdapter {
         result.push(Number(item));
       }
     };
-    
+
     flatten(arr);
     return result;
   }
@@ -350,44 +352,61 @@ export class ONNXAdapter extends BaseAdapter {
   private getArrayDimensions(arr: any[]): number[] {
     const dims: number[] = [];
     let current = arr;
-    
+
     while (Array.isArray(current)) {
       dims.push(current.length);
       current = current[0];
     }
-    
+
     return dims;
   }
 
   private reshapeArray(data: number[], dims: number[]): any {
     if (dims.length === 0) return data[0];
     if (dims.length === 1) return data;
-    
+
     const [firstDim, ...restDims] = dims;
     const size = restDims.reduce((a, b) => a * b, 1);
     const result = [];
-    
+
     for (let i = 0; i < firstDim; i++) {
       const slice = data.slice(i * size, (i + 1) * size);
       result.push(this.reshapeArray(slice, restDims));
     }
-    
+
     return result;
   }
 
-  private getExecutionProviders(): string[] {
+  private async getExecutionProviders(): Promise<string[]> {
     const providers: string[] = [];
-    
-    // Add WebGL provider if available
+
+    // Add WebGPU provider if available (Priority 1)
+    if (await this.isWebGPUAvailable()) {
+      providers.push('webgpu');
+    }
+
+    // Add WebGL provider if available (Priority 2)
     if (this.isWebGLAvailable()) {
       providers.push('webgl');
     }
-    
-    // Add WebAssembly provider (always available)
+
+    // Add WebAssembly provider (always available, Fallback)
     providers.push('wasm');
-    
+
     this.log(`Using execution providers: ${providers.join(', ')}`);
     return providers;
+  }
+
+  private async isWebGPUAvailable(): Promise<boolean> {
+    if (typeof navigator === 'undefined' || !(navigator as any).gpu) return false;
+    try {
+      // Basic check
+      return true;
+      // Full check would be await navigator.gpu.requestAdapter(), but that might prompt user or be slow.
+      // Presence of navigator.gpu is usually enough indication of support in modern browsers.
+    } catch {
+      return false;
+    }
   }
 
   private isWebGLAvailable(): boolean {

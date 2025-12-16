@@ -5,6 +5,7 @@ import chalk from 'chalk';
 import { bundleModel } from './commands/bundle';
 import { validateModel } from './commands/validate';
 import { initProject } from './commands/init';
+import { optimizeModel } from './commands/optimize';
 
 const program = new Command();
 
@@ -60,6 +61,22 @@ program
       console.log(chalk.green('✓ Project initialized successfully'));
     } catch (error) {
       console.error(chalk.red('✗ Initialization failed:'), (error as Error).message);
+      process.exit(1);
+    }
+  });
+
+// Optimize command
+program
+  .command('optimize')
+  .description('Quantize ONNX model to reduce size (requires Python + onnxruntime)')
+  .argument('<input>', 'Path to input .onnx file')
+  .option('-o, --output <path>', 'Output path')
+  .option('-t, --type <type>', 'Quantization type (int8/uint8)', 'uint8')
+  .action(async (input, options) => {
+    try {
+      await optimizeModel(input, options);
+    } catch (error) {
+      console.error(chalk.red('✗ Optimization failed:'), (error as Error).message);
       process.exit(1);
     }
   });
