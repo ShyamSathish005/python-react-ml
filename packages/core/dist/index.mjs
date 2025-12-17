@@ -1147,6 +1147,7 @@ var PythonEngine = class {
     // Legacy support - kept for backward compatibility
     this.pyodide = null;
     this.pendingRequests = /* @__PURE__ */ new Map();
+    this.loadedModels = /* @__PURE__ */ new Map();
     this.options = options;
     this.onStatusChange = options.onStatusChange;
     this.adapterFactory = RuntimeAdapterFactory.getInstance();
@@ -1218,6 +1219,36 @@ var PythonEngine = class {
   async initializeNative() {
     throw new Error("Native platform not yet implemented");
   }
+  async init() {
+    return this.initialize();
+  }
+  async run(job) {
+    const model = this.loadedModels.get(job.modelId);
+    if (!model) {
+      throw new Error(`Model not found: ${job.modelId}`);
+    }
+    const start = performance.now();
+    let data;
+    try {
+      this.setStatus("executing");
+      data = await model.predict(job.input);
+      this.setStatus("ready");
+    } catch (error) {
+      this.setStatus("error");
+      throw error;
+    }
+    const end = performance.now();
+    return {
+      jobId: job.id,
+      data,
+      metrics: {
+        latencyMs: end - start
+      }
+    };
+  }
+  async terminate() {
+    return this.cleanup();
+  }
   async loadModel(bundle, runtimeOverride) {
     if (!this.isInitialized) {
       await this.initialize();
@@ -1244,6 +1275,7 @@ var PythonEngine = class {
           return originalPredict(input);
         };
       }
+      this.loadedModels.set(bundle.manifest.name, model);
       return model;
     } catch (error) {
       this.setStatus("error");
@@ -1258,6 +1290,7 @@ var PythonEngine = class {
       request.reject(new Error("Engine terminated"));
     }
     this.pendingRequests.clear();
+    this.loadedModels.clear();
     this.isInitialized = false;
     this.initializationPromise = null;
     if (this.adapter) {

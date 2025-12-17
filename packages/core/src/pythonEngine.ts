@@ -12,6 +12,7 @@ import type {
 } from './types';
 import { RuntimeAdapterFactory } from './adapters/factory';
 import { WorkerPoolManager } from './pool/workerPool';
+import { IInferenceEngine, InferenceJob, InferenceResult } from '@python-react-ml/inference-spec';
 
 declare global {
   interface Window {
@@ -19,7 +20,7 @@ declare global {
   }
 }
 
-export class PythonEngine {
+export class PythonEngine implements IInferenceEngine {
   private adapter: IAdapter | null = null;
   private adapterFactory: RuntimeAdapterFactory;
   private isInitialized = false;
@@ -36,6 +37,7 @@ export class PythonEngine {
     reject: (error: Error) => void;
     timeout: NodeJS.Timeout;
   }>();
+  private loadedModels = new Map<string, PythonModel>();
 
   constructor(options: PythonEngineOptions) {
     this.options = options;
@@ -137,10 +139,48 @@ export class PythonEngine {
     throw new Error('Native platform not yet implemented');
   }
 
+  async init(): Promise<void> {
+    return this.initialize();
+  }
+
+  async run(job: InferenceJob): Promise<InferenceResult> {
+    const model = this.loadedModels.get(job.modelId);
+    if (!model) {
+      throw new Error(`Model not found: ${job.modelId}`);
+    }
+
+    const start = performance.now();
+    let data: any;
+
+    try {
+      this.setStatus('executing');
+      data = await model.predict(job.input);
+      this.setStatus('ready');
+    } catch (error) {
+      this.setStatus('error');
+      throw error;
+    }
+
+    const end = performance.now();
+
+    return {
+      jobId: job.id,
+      data,
+      metrics: {
+        latencyMs: end - start
+      }
+    };
+  }
+
+  async terminate(): Promise<void> {
+    return this.cleanup();
+  }
+
   async loadModel(bundle: ModelBundle, runtimeOverride?: RuntimeType): Promise<PythonModel> {
     if (!this.isInitialized) {
       await this.initialize();
     }
+
 
     // Determine runtime to use
     const runtime = runtimeOverride || bundle.manifest.runtime || this.detectRuntime(bundle);
@@ -173,6 +213,7 @@ export class PythonEngine {
         };
       }
 
+      this.loadedModels.set(bundle.manifest.name, model);
       return model;
     } catch (error) {
       this.setStatus('error');
@@ -192,6 +233,7 @@ export class PythonEngine {
       request.reject(new Error('Engine terminated'));
     }
     this.pendingRequests.clear();
+    this.loadedModels.clear();
 
     // No direct worker to terminate since we migrated to pool.
     // Adapters manage their own pool resources or cleanup calls pool.terminate if needed.

@@ -1,3 +1,5 @@
+import { IInferenceEngine, InferenceJob, InferenceResult } from '@python-react-ml/inference-spec';
+
 type RuntimeType = 'pyodide' | 'onnx' | 'tfjs';
 interface ModelIOSchema {
     name: string;
@@ -166,7 +168,7 @@ declare global {
         loadPyodide: any;
     }
 }
-declare class PythonEngine {
+declare class PythonEngine implements IInferenceEngine {
     private adapter;
     private adapterFactory;
     private isInitialized;
@@ -177,6 +179,7 @@ declare class PythonEngine {
     private pyodide;
     private pool;
     private pendingRequests;
+    private loadedModels;
     constructor(options: PythonEngineOptions);
     private setStatus;
     getStatus(): RuntimeStatus;
@@ -187,6 +190,9 @@ declare class PythonEngine {
     private handleUnsolicitedMessage;
     private generateRequestId;
     private initializeNative;
+    init(): Promise<void>;
+    run(job: InferenceJob): Promise<InferenceResult>;
+    terminate(): Promise<void>;
     loadModel(bundle: ModelBundle, runtimeOverride?: RuntimeType): Promise<PythonModel>;
     cleanup(): Promise<void>;
     private detectRuntime;
