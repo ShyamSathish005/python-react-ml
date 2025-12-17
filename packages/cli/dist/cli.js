@@ -313,7 +313,7 @@ var require_BufferList = __commonJS({
         this.head = this.tail = null;
         this.length = 0;
       };
-      BufferList.prototype.join = function join4(s) {
+      BufferList.prototype.join = function join5(s) {
         if (this.length === 0)
           return "";
         var p = this.head;
@@ -3038,8 +3038,8 @@ var require_utils = __commonJS({
       var result = transform[inputType][outputType](input);
       return result;
     };
-    exports.resolve = function(path5) {
-      var parts = path5.split("/");
+    exports.resolve = function(path6) {
+      var parts = path6.split("/");
       var result = [];
       for (var index = 0; index < parts.length; index++) {
         var part = parts[index];
@@ -8871,18 +8871,18 @@ var require_object = __commonJS({
       var object = new ZipObject(name, zipObjectContent, o);
       this.files[name] = object;
     };
-    var parentFolder = function(path5) {
-      if (path5.slice(-1) === "/") {
-        path5 = path5.substring(0, path5.length - 1);
+    var parentFolder = function(path6) {
+      if (path6.slice(-1) === "/") {
+        path6 = path6.substring(0, path6.length - 1);
       }
-      var lastSlash = path5.lastIndexOf("/");
-      return lastSlash > 0 ? path5.substring(0, lastSlash) : "";
+      var lastSlash = path6.lastIndexOf("/");
+      return lastSlash > 0 ? path6.substring(0, lastSlash) : "";
     };
-    var forceTrailingSlash = function(path5) {
-      if (path5.slice(-1) !== "/") {
-        path5 += "/";
+    var forceTrailingSlash = function(path6) {
+      if (path6.slice(-1) !== "/") {
+        path6 += "/";
       }
-      return path5;
+      return path6;
     };
     var folderAdd = function(name, createFolders) {
       createFolders = typeof createFolders !== "undefined" ? createFolders : defaults.createFolders;
@@ -9883,7 +9883,7 @@ var require_lib3 = __commonJS({
 
 // src/cli.ts
 var import_commander = require("commander");
-var import_chalk2 = __toESM(require("chalk"));
+var import_chalk3 = __toESM(require("chalk"));
 
 // src/commands/bundle.ts
 var fs2 = __toESM(require("fs"));
@@ -10418,33 +10418,70 @@ function formatBytes(bytes, decimals = 2) {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
 }
 
+// src/commands/compile.ts
+var fs6 = __toESM(require("fs"));
+var path5 = __toESM(require("path"));
+var import_chalk2 = __toESM(require("chalk"));
+var import_compiler = require("@python-react-ml/compiler");
+async function compileModel(entry, options) {
+  console.log(import_chalk2.default.blue(`\u2699\uFE0F  Compiling Python logic from ${entry}...`));
+  if (!fs6.existsSync(entry)) {
+    throw new Error(`Entry file not found: ${entry}`);
+  }
+  const pythonCode = fs6.readFileSync(entry, "utf-8");
+  const compiler = new import_compiler.Compiler();
+  try {
+    const { wrapper, wgsl } = compiler.compile(pythonCode);
+    let outputPath = options.output;
+    if (!outputPath) {
+      const dir = path5.dirname(entry);
+      const name = path5.basename(entry, path5.extname(entry));
+      outputPath = path5.join(dir, `${name}.ts`);
+    }
+    fs6.writeFileSync(outputPath, wrapper);
+    console.log(import_chalk2.default.green(`\u2713 Compiled to TypeScript wrapper: ${outputPath}`));
+    if (options.verbose) {
+      console.log(import_chalk2.default.gray("\nDat WGSL Code:\n"));
+      console.log(import_chalk2.default.cyan(wgsl));
+    }
+  } catch (error) {
+    console.error(import_chalk2.default.red("\u2717 Compilation failed:"));
+    if (error instanceof Error) {
+      console.error(error.message);
+    } else {
+      console.error(String(error));
+    }
+    process.exit(1);
+  }
+}
+
 // src/cli.ts
 var program = new import_commander.Command();
 program.name("python-react-ml").description("CLI tools for Python React ML framework").version("1.0.0");
 program.command("bundle").description("Bundle a Python model for use in React/React Native").argument("<entry>", "Path to the main Python file").option("-o, --output <path>", "Output bundle path", "model.bundle.zip").option("-n, --name <name>", "Model name").option("-v, --version <version>", "Model version", "1.0.0").option("--include <files...>", "Additional files to include").option("--deps <packages...>", "Python dependencies").action(async (entry, options) => {
   try {
     await bundleModel(entry, options);
-    console.log(import_chalk2.default.green("\u2713 Model bundled successfully"));
+    console.log(import_chalk3.default.green("\u2713 Model bundled successfully"));
   } catch (error) {
-    console.error(import_chalk2.default.red("\u2717 Bundle failed:"), error.message);
+    console.error(import_chalk3.default.red("\u2717 Bundle failed:"), error.message);
     process.exit(1);
   }
 });
 program.command("validate").description("Validate a Python model for compatibility").argument("<entry>", "Path to the Python file to validate").action(async (entry) => {
   try {
     await validateModel(entry);
-    console.log(import_chalk2.default.green("\u2713 Model validation passed"));
+    console.log(import_chalk3.default.green("\u2713 Model validation passed"));
   } catch (error) {
-    console.error(import_chalk2.default.red("\u2717 Validation failed:"), error.message);
+    console.error(import_chalk3.default.red("\u2717 Validation failed:"), error.message);
     process.exit(1);
   }
 });
 program.command("init").description("Initialize a new Python React ML project").argument("[name]", "Project name").option("-t, --template <template>", "Project template", "basic").action(async (name, options) => {
   try {
     await initProject(name, options);
-    console.log(import_chalk2.default.green("\u2713 Project initialized successfully"));
+    console.log(import_chalk3.default.green("\u2713 Project initialized successfully"));
   } catch (error) {
-    console.error(import_chalk2.default.red("\u2717 Initialization failed:"), error.message);
+    console.error(import_chalk3.default.red("\u2717 Initialization failed:"), error.message);
     process.exit(1);
   }
 });
@@ -10452,7 +10489,15 @@ program.command("optimize").description("Quantize ONNX model to reduce size (req
   try {
     await optimizeModel(input, options);
   } catch (error) {
-    console.error(import_chalk2.default.red("\u2717 Optimization failed:"), error.message);
+    console.error(import_chalk3.default.red("\u2717 Optimization failed:"), error.message);
+    process.exit(1);
+  }
+});
+program.command("compile").description("Compile Python logic to WebGPU Compute Shader").argument("<entry>", "Path to input .py file").option("-o, --output <path>", "Output .ts file path").option("-v, --verbose", "Print generated WGSL to stdout").action(async (entry, options) => {
+  try {
+    await compileModel(entry, options);
+  } catch (error) {
+    console.error(import_chalk3.default.red("\u2717 Compilation failed:"), error.message);
     process.exit(1);
   }
 });

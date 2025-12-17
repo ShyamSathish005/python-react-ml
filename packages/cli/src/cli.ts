@@ -6,6 +6,7 @@ import { bundleModel } from './commands/bundle';
 import { validateModel } from './commands/validate';
 import { initProject } from './commands/init';
 import { optimizeModel } from './commands/optimize';
+import { compileModel } from './commands/compile';
 
 const program = new Command();
 
@@ -77,6 +78,22 @@ program
       await optimizeModel(input, options);
     } catch (error) {
       console.error(chalk.red('✗ Optimization failed:'), (error as Error).message);
+      process.exit(1);
+    }
+  });
+
+// Compile command
+program
+  .command('compile')
+  .description('Compile Python logic to WebGPU Compute Shader')
+  .argument('<entry>', 'Path to input .py file')
+  .option('-o, --output <path>', 'Output .ts file path')
+  .option('-v, --verbose', 'Print generated WGSL to stdout')
+  .action(async (entry, options) => {
+    try {
+      await compileModel(entry, options);
+    } catch (error) {
+      console.error(chalk.red('✗ Compilation failed:'), (error as Error).message);
       process.exit(1);
     }
   });
