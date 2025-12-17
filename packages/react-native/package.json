@@ -1,6 +1,6 @@
 {
   "name": "python-react-ml-react-native",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "React Native bridge for Python ML models",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -12,12 +12,12 @@
   ],
   "scripts": {
     "build": "tsup src/index.ts --format cjs --dts --external react-native",
-    "dev": "tsup src/index.ts --format cjs --dts --external react-native --watch", 
+    "dev": "tsup src/index.ts --format cjs --dts --external react-native --watch",
     "clean": "rm -rf dist",
     "test": "jest"
   },
   "dependencies": {
-    "python-react-ml": "file:../core"
+    "python-react-ml": "^2.0.0"
   },
   "peerDependencies": {
     "react": ">=16.8.0",

@@ -18,6 +18,13 @@ function useModel(modelUrl, options = {}) {
   const [progress, setProgress] = useState({ status: "idle" });
   const [isLoading, setIsLoading] = useState(false);
   const [isPredicting, setIsPredicting] = useState(false);
+  const isMounted = useRef(true);
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
   const engineRef = useRef(null);
   const retryCountRef = useRef(0);
   const abortControllerRef = useRef(null);
@@ -148,6 +155,8 @@ function useModel(modelUrl, options = {}) {
       const result = await model.predict(input);
       return result;
     } catch (err) {
+      if (!isMounted.current)
+        return;
       const modelError = {
         type: "python",
         message: err instanceof Error ? err.message : "Prediction failed",
@@ -157,7 +166,9 @@ function useModel(modelUrl, options = {}) {
       setError(modelError);
       throw modelError;
     } finally {
-      setIsPredicting(false);
+      if (isMounted.current) {
+        setIsPredicting(false);
+      }
     }
   }, [model]);
   const unload = useCallback(async () => {
@@ -194,6 +205,9 @@ function useModel(modelUrl, options = {}) {
   }, [modelUrl, autoLoad, loadModel]);
   useEffect(() => {
     return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
       unload();
       engineRef.current?.cleanup();
     };

@@ -49,6 +49,13 @@ function useModel(modelUrl, options = {}) {
   const [progress, setProgress] = (0, import_react.useState)({ status: "idle" });
   const [isLoading, setIsLoading] = (0, import_react.useState)(false);
   const [isPredicting, setIsPredicting] = (0, import_react.useState)(false);
+  const isMounted = (0, import_react.useRef)(true);
+  (0, import_react.useEffect)(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
   const engineRef = (0, import_react.useRef)(null);
   const retryCountRef = (0, import_react.useRef)(0);
   const abortControllerRef = (0, import_react.useRef)(null);
@@ -179,6 +186,8 @@ function useModel(modelUrl, options = {}) {
       const result = await model.predict(input);
       return result;
     } catch (err) {
+      if (!isMounted.current)
+        return;
       const modelError = {
         type: "python",
         message: err instanceof Error ? err.message : "Prediction failed",
@@ -188,7 +197,9 @@ function useModel(modelUrl, options = {}) {
       setError(modelError);
       throw modelError;
     } finally {
-      setIsPredicting(false);
+      if (isMounted.current) {
+        setIsPredicting(false);
+      }
     }
   }, [model]);
   const unload = (0, import_react.useCallback)(async () => {
@@ -225,6 +236,9 @@ function useModel(modelUrl, options = {}) {
   }, [modelUrl, autoLoad, loadModel]);
   (0, import_react.useEffect)(() => {
     return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
       unload();
       engineRef.current?.cleanup();
     };
