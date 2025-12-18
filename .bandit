@@ -1,0 +1,6 @@
+exclude_dirs:
+  - node_modules
+  - .venv
+  - tests
+skips:
+  - B101

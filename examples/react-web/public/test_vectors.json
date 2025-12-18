@@ -1,0 +1,441 @@
+{
+  "version": "1.0",
+  "generated_at": "2025-12-18T04:37:57.969919+00:00",
+  "vectors": [
+    {
+      "id": "vector_0",
+      "input": [
+        "Y򽪒񜧒",
+        "'6*Ô¾񀛮u",
+        "public",
+        "version",
+        "0ùÇ\u0001",
+        "ÏÔð",
+        ""
+      ],
+      "expected_output": "Y򽪒񜧒\n'6*Ô¾񀛮u\npublic\nversion\n0ùÇ\u0001\nÏÔð\n"
+    },
+    {
+      "id": "vector_1",
+      "input": [
+        "³󫡮¹Úà\t¾§\u0012ÂT¢¤",
+        "ÓN"
+      ],
+      "expected_output": "³󫡮¹Úà\t¾§\u0012ÂT¢¤\nÓN"
+    },
+    {
+      "id": "vector_2",
+      "input": [
+        "¹",
+        "cli_deterministic",
+        "ï",
+        "O\u001f",
+        "á\u001a"
+      ],
+      "expected_output": "¹\ncli_deterministic\nï\nO\u001f\ná\u001a"
+    },
+    {
+      "id": "vector_3",
+      "input": [
+        "𻯓ó񏺍",
+        "õ",
+        "󉾝þµ"
+      ],
+      "expected_output": "𻯓ó񏺍\nõ\n󉾝þµ"
+    },
+    {
+      "id": "vector_4",
+      "input": [
+        "c"
+      ],
+      "expected_output": "c"
+    },
+    {
+      "id": "vector_5",
+      "input": [
+        "¶Qi äv񓏝\u0002񫁆||\u001e$",
+        "@a\""
+      ],
+      "expected_output": "¶Qi äv񓏝\u0002񫁆||\u001e$\n@a\""
+    },
+    {
+      "id": "vector_6",
+      "input": [],
+      "expected_output": ""
+    },
+    {
+      "id": "vector_7",
+      "input": [
+        "y"
+      ],
+      "expected_output": "y"
+    },
+    {
+      "id": "vector_8",
+      "input": [
+        "+񁃝bµ",
+        "",
+        "1.0",
+        "examples",
+        "戁\u0018􏞶þ",
+        "Ú"
+      ],
+      "expected_output": "+񁃝bµ\n\n1.0\nexamples\n戁\u0018􏞶þ\nÚ"
+    },
+    {
+      "id": "vector_9",
+      "input": [
+        ""
+      ],
+      "expected_output": ""
+    },
+    {
+      "id": "vector_10",
+      "input": [
+        "¹",
+        "cli_deterministic",
+        "ï",
+        "O\u001f",
+        "á\u001a"
+      ],
+      "expected_output": "¹\ncli_deterministic\nï\nO\u001f\ná\u001a"
+    },
+    {
+      "id": "vector_11",
+      "input": [],
+      "expected_output": ""
+    },
+    {
+      "id": "vector_12",
+      "input": [
+        "𻯓ó񏺍",
+        "õ",
+        "󉾝þµ"
+      ],
+      "expected_output": "𻯓ó񏺍\nõ\n󉾝þµ"
+    },
+    {
+      "id": "vector_13",
+      "input": [
+        "¶Qi äv񓏝\u0002񫁆||\u001e$",
+        "@a\""
+      ],
+      "expected_output": "¶Qi äv񓏝\u0002񫁆||\u001e$\n@a\""
+    },
+    {
+      "id": "vector_14",
+      "input": [
+        "+񁃝bµ",
+        "",
+        "1.0",
+        "examples",
+        "戁\u0018􏞶þ",
+        "Ú"
+      ],
+      "expected_output": "+񁃝bµ\n\n1.0\nexamples\n戁\u0018􏞶þ\nÚ"
+    },
+    {
+      "id": "vector_15",
+      "input": [
+        ""
+      ],
+      "expected_output": ""
+    },
+    {
+      "id": "vector_16",
+      "input": [
+        "c"
+      ],
+      "expected_output": "c"
+    },
+    {
+      "id": "vector_17",
+      "input": [
+        "y"
+      ],
+      "expected_output": "y"
+    },
+    {
+      "id": "vector_18",
+      "input": [
+        "³󫡮¹Úà\t¾§\u0012ÂT¢¤",
+        "ÓN"
+      ],
+      "expected_output": "³󫡮¹Úà\t¾§\u0012ÂT¢¤\nÓN"
+    },
+    {
+      "id": "vector_19",
+      "input": [
+        "Y򽪒񜧒",
+        "'6*Ô¾񀛮u",
+        "public",
+        "version",
+        "0ùÇ\u0001",
+        "ÏÔð",
+        ""
+      ],
+      "expected_output": "Y򽪒񜧒\n'6*Ô¾񀛮u\npublic\nversion\n0ùÇ\u0001\nÏÔð\n"
+    },
+    {
+      "id": "vector_20",
+      "input": [
+        "+񁃝bµ",
+        "",
+        "1.0",
+        "examples",
+        "戁\u0018􏞶þ",
+        "Ú"
+      ],
+      "expected_output": "+񁃝bµ\n\n1.0\nexamples\n戁\u0018􏞶þ\nÚ"
+    },
+    {
+      "id": "vector_21",
+      "input": [
+        "¹",
+        "cli_deterministic",
+        "ï",
+        "O\u001f",
+        "á\u001a"
+      ],
+      "expected_output": "¹\ncli_deterministic\nï\nO\u001f\ná\u001a"
+    },
+    {
+      "id": "vector_22",
+      "input": [
+        "³󫡮¹Úà\t¾§\u0012ÂT¢¤",
+        "ÓN"
+      ],
+      "expected_output": "³󫡮¹Úà\t¾§\u0012ÂT¢¤\nÓN"
+    },
+    {
+      "id": "vector_23",
+      "input": [
+        ""
+      ],
+      "expected_output": ""
+    },
+    {
+      "id": "vector_24",
+      "input": [],
+      "expected_output": ""
+    },
+    {
+      "id": "vector_25",
+      "input": [
+        "¶Qi äv񓏝\u0002񫁆||\u001e$",
+        "@a\""
+      ],
+      "expected_output": "¶Qi äv񓏝\u0002񫁆||\u001e$\n@a\""
+    },
+    {
+      "id": "vector_26",
+      "input": [
+        "c"
+      ],
+      "expected_output": "c"
+    },
+    {
+      "id": "vector_27",
+      "input": [
+        "y"
+      ],
+      "expected_output": "y"
+    },
+    {
+      "id": "vector_28",
+      "input": [
+        "𻯓ó񏺍",
+        "õ",
+        "󉾝þµ"
+      ],
+      "expected_output": "𻯓ó񏺍\nõ\n󉾝þµ"
+    },
+    {
+      "id": "vector_29",
+      "input": [
+        "Y򽪒񜧒",
+        "'6*Ô¾񀛮u",
+        "public",
+        "version",
+        "0ùÇ\u0001",
+        "ÏÔð",
+        ""
+      ],
+      "expected_output": "Y򽪒񜧒\n'6*Ô¾񀛮u\npublic\nversion\n0ùÇ\u0001\nÏÔð\n"
+    },
+    {
+      "id": "vector_30",
+      "input": [
+        "+񁃝bµ",
+        "",
+        "1.0",
+        "examples",
+        "戁\u0018􏞶þ",
+        "Ú"
+      ],
+      "expected_output": "+񁃝bµ\n\n1.0\nexamples\n戁\u0018􏞶þ\nÚ"
+    },
+    {
+      "id": "vector_31",
+      "input": [
+        "𻯓ó񏺍",
+        "õ",
+        "󉾝þµ"
+      ],
+      "expected_output": "𻯓ó񏺍\nõ\n󉾝þµ"
+    },
+    {
+      "id": "vector_32",
+      "input": [
+        "c"
+      ],
+      "expected_output": "c"
+    },
+    {
+      "id": "vector_33",
+      "input": [
+        "¹",
+        "cli_deterministic",
+        "ï",
+        "O\u001f",
+        "á\u001a"
+      ],
+      "expected_output": "¹\ncli_deterministic\nï\nO\u001f\ná\u001a"
+    },
+    {
+      "id": "vector_34",
+      "input": [
+        "³󫡮¹Úà\t¾§\u0012ÂT¢¤",
+        "ÓN"
+      ],
+      "expected_output": "³󫡮¹Úà\t¾§\u0012ÂT¢¤\nÓN"
+    },
+    {
+      "id": "vector_35",
+      "input": [
+        ""
+      ],
+      "expected_output": ""
+    },
+    {
+      "id": "vector_36",
+      "input": [],
+      "expected_output": ""
+    },
+    {
+      "id": "vector_37",
+      "input": [
+        "y"
+      ],
+      "expected_output": "y"
+    },
+    {
+      "id": "vector_38",
+      "input": [
+        "Y򽪒񜧒",
+        "'6*Ô¾񀛮u",
+        "public",
+        "version",
+        "0ùÇ\u0001",
+        "ÏÔð",
+        ""
+      ],
+      "expected_output": "Y򽪒񜧒\n'6*Ô¾񀛮u\npublic\nversion\n0ùÇ\u0001\nÏÔð\n"
+    },
+    {
+      "id": "vector_39",
+      "input": [
+        "¶Qi äv񓏝\u0002񫁆||\u001e$",
+        "@a\""
+      ],
+      "expected_output": "¶Qi äv񓏝\u0002񫁆||\u001e$\n@a\""
+    },
+    {
+      "id": "vector_40",
+      "input": [
+        "³󫡮¹Úà\t¾§\u0012ÂT¢¤",
+        "ÓN"
+      ],
+      "expected_output": "³󫡮¹Úà\t¾§\u0012ÂT¢¤\nÓN"
+    },
+    {
+      "id": "vector_41",
+      "input": [],
+      "expected_output": ""
+    },
+    {
+      "id": "vector_42",
+      "input": [
+        "c"
+      ],
+      "expected_output": "c"
+    },
+    {
+      "id": "vector_43",
+      "input": [
+        "Y򽪒񜧒",
+        "'6*Ô¾񀛮u",
+        "public",
+        "version",
+        "0ùÇ\u0001",
+        "ÏÔð",
+        ""
+      ],
+      "expected_output": "Y򽪒񜧒\n'6*Ô¾񀛮u\npublic\nversion\n0ùÇ\u0001\nÏÔð\n"
+    },
+    {
+      "id": "vector_44",
+      "input": [
+        "+񁃝bµ",
+        "",
+        "1.0",
+        "examples",
+        "戁\u0018􏞶þ",
+        "Ú"
+      ],
+      "expected_output": "+񁃝bµ\n\n1.0\nexamples\n戁\u0018􏞶þ\nÚ"
+    },
+    {
+      "id": "vector_45",
+      "input": [
+        "¹",
+        "cli_deterministic",
+        "ï",
+        "O\u001f",
+        "á\u001a"
+      ],
+      "expected_output": "¹\ncli_deterministic\nï\nO\u001f\ná\u001a"
+    },
+    {
+      "id": "vector_46",
+      "input": [
+        ""
+      ],
+      "expected_output": ""
+    },
+    {
+      "id": "vector_47",
+      "input": [
+        "y"
+      ],
+      "expected_output": "y"
+    },
+    {
+      "id": "vector_48",
+      "input": [
+        "𻯓ó񏺍",
+        "õ",
+        "󉾝þµ"
+      ],
+      "expected_output": "𻯓ó񏺍\nõ\n󉾝þµ"
+    },
+    {
+      "id": "vector_49",
+      "input": [
+        "¶Qi äv񓏝\u0002񫁆||\u001e$",
+        "@a\""
+      ],
+      "expected_output": "¶Qi äv񓏝\u0002񫁆||\u001e$\n@a\""
+    }
+  ]
+}

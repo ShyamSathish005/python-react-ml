@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useModel, PythonModelProvider } from '@python-react-ml/react';
+import FidelityVerifier from './FidelityVerifier';
 import './App.css';
 
 // Component using the useModel hook
@@ -154,6 +155,7 @@ function App() {
 
         <main className="app-main">
           <ModelDemo />
+          <FidelityVerifier />
         </main>
 
         <footer className="app-footer">

@@ -1,0 +1,4 @@
+# file: /Users/shyamsathish/Desktop/python-react-ml/scripts/generate_browser_tests.py
+# hypothesis_version: 6.148.7
+
+['1.0', '12345', 'HYPOTHESIS_SEED', '__main__', 'cli_deterministic', 'examples', 'expected_output', 'generated_at', 'id', 'input', 'public', 'react-web', 'test_vectors.json', 'utf-8', 'vectors', 'version']

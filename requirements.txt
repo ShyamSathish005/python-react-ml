@@ -1,0 +1,5 @@
+ruff>=0.6.8
+mypy>=1.13.0
+bandit>=1.7.9
+hypothesis>=6.117.0
+pytest>=8.3.0
