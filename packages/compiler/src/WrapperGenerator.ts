@@ -25,11 +25,12 @@ export async function ${name}(${arg1}: Float32Array, ${arg2}: Float32Array): Pro
     code: shaderCode
   });
 
-  const size = ${arg1}.byteLength; // Assuming both arrays are same size for MVP
+  const ${arg1}Size = ${arg1}.byteLength;
+  const ${arg2}Size = ${arg2}.byteLength;
   
   // Create buffers
   const ${arg1}Buffer = device.createBuffer({
-    size: size,
+    size: ${arg1}Size,
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     mappedAtCreation: true
   });
@@ -37,15 +38,16 @@ export async function ${name}(${arg1}: Float32Array, ${arg2}: Float32Array): Pro
   ${arg1}Buffer.unmap();
 
   const ${arg2}Buffer = device.createBuffer({
-    size: size,
+    size: ${arg2}Size,
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     mappedAtCreation: true
   });
   new Float32Array(${arg2}Buffer.getMappedRange()).set(${arg2});
   ${arg2}Buffer.unmap();
 
+  const resultSize = Math.min(${arg1}Size, ${arg2}Size);
   const resultBuffer = device.createBuffer({
-    size: size,
+    size: resultSize,
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC
   });
 
@@ -81,16 +83,16 @@ export async function ${name}(${arg1}: Float32Array, ${arg2}: Float32Array): Pro
   passEncoder.setPipeline(computePipeline);
   passEncoder.setBindGroup(0, bindGroup);
   // Dispatch: Assuming workgroup_size(64), output size / 64
-  const workgroupCount = Math.ceil(${arg1}.length / 64);
+  const workgroupCount = Math.ceil(Math.min(${arg1}.length, ${arg2}.length) / 64);
   passEncoder.dispatchWorkgroups(workgroupCount);
   passEncoder.end();
 
   // Read back
   const gpuReadBuffer = device.createBuffer({
-    size: size,
+    size: resultSize,
     usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ
   });
-  commandEncoder.copyBufferToBuffer(resultBuffer, 0, gpuReadBuffer, 0, size);
+  commandEncoder.copyBufferToBuffer(resultBuffer, 0, gpuReadBuffer, 0, resultSize);
 
   device.queue.submit([commandEncoder.finish()]);
 
