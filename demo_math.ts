@@ -17,19 +17,30 @@ export async function vector_add(a: Float32Array, b: Float32Array): Promise<Floa
 @compute @workgroup_size(64)
 fn main(@builtin(global_invocation_id) global_id : vec3<u32>) {
   let index = global_id.x;
-  // Safety check for array bounds
-  if (index >= arrayLength(&a)) { return; }
-  result[index] = a[index] + b[index];
+  // Safety check for result array bounds
+  if (index >= arrayLength(&result)) { return; }
+
+  var aVal = 0.0;
+  if (index < arrayLength(&a)) {
+    aVal = a[index];
+  }
+
+  var bVal = 0.0;
+  if (index < arrayLength(&b)) {
+    bVal = b[index];
+  }
+
+  result[index] = aVal + bVal;
 }`;
   const shaderModule = device.createShaderModule({
     code: shaderCode
   });
 
-  const size = a.byteLength; // Assuming both arrays are same size for MVP
+  const resultSize = Math.max(a.byteLength, b.byteLength);
   
   // Create buffers
   const aBuffer = device.createBuffer({
-    size: size,
+    size: a.byteLength,
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     mappedAtCreation: true
   });
@@ -37,7 +48,7 @@ fn main(@builtin(global_invocation_id) global_id : vec3<u32>) {
   aBuffer.unmap();
 
   const bBuffer = device.createBuffer({
-    size: size,
+    size: b.byteLength,
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
     mappedAtCreation: true
   });
@@ -45,7 +56,7 @@ fn main(@builtin(global_invocation_id) global_id : vec3<u32>) {
   bBuffer.unmap();
 
   const resultBuffer = device.createBuffer({
-    size: size,
+    size: resultSize,
     usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC
   });
 
@@ -80,17 +91,20 @@ fn main(@builtin(global_invocation_id) global_id : vec3<u32>) {
   const passEncoder = commandEncoder.beginComputePass();
   passEncoder.setPipeline(computePipeline);
   passEncoder.setBindGroup(0, bindGroup);
+
   // Dispatch: Assuming workgroup_size(64), output size / 64
-  const workgroupCount = Math.ceil(a.length / 64);
+  // resultSize is in bytes, so divide by 4 to get element count
+  const elementCount = resultSize / 4;
+  const workgroupCount = Math.ceil(elementCount / 64);
   passEncoder.dispatchWorkgroups(workgroupCount);
   passEncoder.end();
 
   // Read back
   const gpuReadBuffer = device.createBuffer({
-    size: size,
+    size: resultSize,
     usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ
   });
-  commandEncoder.copyBufferToBuffer(resultBuffer, 0, gpuReadBuffer, 0, size);
+  commandEncoder.copyBufferToBuffer(resultBuffer, 0, gpuReadBuffer, 0, resultSize);
 
   device.queue.submit([commandEncoder.finish()]);
 
