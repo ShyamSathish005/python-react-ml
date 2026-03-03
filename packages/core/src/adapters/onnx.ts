@@ -71,7 +71,7 @@ export class ONNXAdapter extends BaseAdapter {
     try {
       // Check if ONNX Runtime is available
       if (typeof ort === 'undefined') {
-        throw new Error('ONNX Runtime Web not found. Please ensure onnxruntime-web is loaded.');
+        throw new Error('ONNX Runtime not found. Please ensure onnxruntime-web is loaded.');
       }
 
       // Merge options
@@ -88,7 +88,7 @@ export class ONNXAdapter extends BaseAdapter {
         }
       }
 
-      this.setStatus('ready');
+      this.setStatus('idle');
       this.log('ONNX adapter initialized successfully');
     } catch (error) {
       const runtimeError = this.createError(
@@ -102,11 +102,11 @@ export class ONNXAdapter extends BaseAdapter {
   }
 
   async load(bundle: ModelBundle): Promise<PythonModel> {
-    if (this._status !== 'ready') {
+    this.validateBundle(bundle);
+
+    if (this._status !== 'idle' && this._status !== 'ready') {
       throw this.createError('loading', 'Adapter not initialized');
     }
-
-    this.validateBundle(bundle);
     this.setStatus('loading');
 
     try {

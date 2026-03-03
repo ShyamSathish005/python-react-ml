@@ -40,7 +40,7 @@ export class PyodideAdapter extends BaseAdapter {
         await this.initializeDirect(mergedOptions);
       }
 
-      this.setStatus('ready');
+      this.setStatus('idle');
       this.log('Pyodide adapter initialized successfully');
     } catch (error) {
       const runtimeError = this.createError(
@@ -75,11 +75,11 @@ export class PyodideAdapter extends BaseAdapter {
   }
 
   async load(bundle: ModelBundle): Promise<PythonModel> {
-    if (this._status !== 'ready') {
+    this.validateBundle(bundle);
+
+    if (this._status !== 'idle' && this._status !== 'ready') {
       throw this.createError('loading', 'Adapter not initialized');
     }
-
-    this.validateBundle(bundle);
     this.setStatus('loading');
 
     try {
@@ -122,7 +122,7 @@ export class PyodideAdapter extends BaseAdapter {
 
   async predict(model: PythonModel, inputs: any): Promise<any> {
     if (this._status !== 'ready') {
-      throw this.createError('execution', 'Adapter not ready');
+      throw this.createError('execution', 'Adapter not initialized');
     }
 
     this.validateInputs(inputs, model.manifest);
@@ -252,12 +252,12 @@ export class PyodideAdapter extends BaseAdapter {
   protected validateRuntimeSpecificBundle(bundle: ModelBundle): void {
     const manifest = bundle.manifest;
 
-    if (!manifest.entrypoint) {
-      throw this.createError('validation', 'Pyodide models require entrypoint field');
-    }
-
     if (!manifest.python_version) {
       throw this.createError('validation', 'Pyodide models require python_version field');
+    }
+
+    if (!manifest.entrypoint) {
+      throw this.createError('validation', 'Pyodide models require entrypoint field');
     }
 
     if (!bundle.code) {
