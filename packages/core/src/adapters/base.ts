@@ -61,13 +61,11 @@ export abstract class BaseAdapter implements IAdapter {
     message: string, 
     details?: any
   ): RuntimeError {
-    return {
-      type,
-      message,
-      details,
-      timestamp: new Date().toISOString(),
-      stack: new Error().stack
-    };
+    const error = new Error(message) as Error & RuntimeError;
+    error.type = type;
+    error.details = details;
+    error.timestamp = new Date().toISOString();
+    return error;
   }
 
   protected log(message: string, ...args: any[]): void {
@@ -111,15 +109,15 @@ export abstract class BaseAdapter implements IAdapter {
       throw this.createError('validation', 'Bundle manifest is missing');
     }
 
+    // Run runtime-specific validation first to surface field-level errors early
+    this.validateRuntimeSpecificBundle(bundle);
+
     if (bundle.manifest.runtime !== this.runtime) {
       throw this.createError(
         'validation', 
         `Bundle runtime '${bundle.manifest.runtime}' does not match adapter runtime '${this.runtime}'`
       );
     }
-
-    // Validate required fields based on runtime
-    this.validateRuntimeSpecificBundle(bundle);
   }
 
   /**

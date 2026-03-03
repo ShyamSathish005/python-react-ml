@@ -14,7 +14,8 @@ interface TensorFlow {
   loadGraphModel: (path: string | ArrayBuffer, options?: any) => Promise<GraphModel>;
   tensor: (values: any, shape?: number[], dtype?: string) => Tensor;
   setBackend: (backendName: string) => Promise<boolean>;
-  getBackend: () => string;
+  /** Optional because some bundled/mocked versions of tf may not expose getBackend. */
+  getBackend?: () => string;
   ready: () => Promise<void>;
   browser?: {
     fromPixels: (pixels: ImageData | HTMLImageElement | HTMLCanvasElement | HTMLVideoElement, numChannels?: number) => Tensor;
@@ -86,8 +87,9 @@ export class TFJSAdapter extends BaseAdapter {
       // Wait for TensorFlow.js to be ready
       await tf.ready();
       
-      this.log(`TensorFlow.js ready with backend: ${tf.getBackend()}`);
-      this.setStatus('ready');
+      const backend = typeof tf.getBackend === 'function' ? tf.getBackend() : undefined;
+      this.log(`TensorFlow.js ready${backend ? ` with backend: ${backend}` : ''}`);
+      this.setStatus('idle');
     } catch (error) {
       const runtimeError = this.createError(
         'initialization',
@@ -100,11 +102,11 @@ export class TFJSAdapter extends BaseAdapter {
   }
 
   async load(bundle: ModelBundle): Promise<PythonModel> {
-    if (this._status !== 'ready') {
+    this.validateBundle(bundle);
+
+    if (this._status !== 'idle' && this._status !== 'ready') {
       throw this.createError('loading', 'Adapter not initialized');
     }
-
-    this.validateBundle(bundle);
     this.setStatus('loading');
 
     try {
